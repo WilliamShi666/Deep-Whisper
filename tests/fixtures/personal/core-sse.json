@@ -1,0 +1,14 @@
+{
+  "userMessage": {
+    "type": "user_message",
+    "message": {"id":"user-1","conversation_id":"conversation-1","role":"user","content_type":"text","content":"今天想聊聊。","image_url":null,"audio_url":null,"created_at":"2026-10-07T00:00:00.000Z"}
+  },
+  "chunk": {"type":"chunk","text":"我在这里。"},
+  "done": {
+    "type":"done",
+    "message": {"id":"assistant-1","conversation_id":"conversation-1","role":"assistant","content_type":"text","content":"我在这里。","image_url":null,"audio_url":null,"created_at":"2026-10-07T00:00:01.000Z"},
+    "photo_request":false,
+    "photo_scene":null
+  },
+  "error": {"type":"error","error":"回复暂时无法生成，请重试。","code":"CHAT_FAILED"}
+}

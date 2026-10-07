@@ -1,0 +1,676 @@
+@import url('https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@300..700&family=Noto+Serif+SC:wght@200..900&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-serif: "Noto Serif SC", "Songti SC", "SimSun", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --shadow-2xs: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 2%);
+  --shadow-xs: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 2%);
+  --shadow-sm: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 4%), 0px 1px 2px -1px hsl(225 27.7778% 14.1176% / 4%);
+  --shadow-md: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 4%), 0px 2px 4px -1px hsl(225 27.7778% 14.1176% / 4%);
+  --shadow-lg: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 4%), 0px 4px 6px -1px hsl(225 27.7778% 14.1176% / 4%);
+  --shadow-xl: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 4%), 0px 8px 10px -1px hsl(225 27.7778% 14.1176% / 4%);
+  --shadow-2xl: 0px 1px 2px 0px hsl(225 27.7778% 14.1176% / 10%);
+}
+
+/*
+ * 英文界面：Latin-first 字体栈（U2 / t6，契约 §11.1）。
+ *
+ * 为什么需要它：上面 @theme 里的 --font-sans / --font-serif 都以 Noto Sans SC / PingFang SC
+ * 打头 —— 中文态必须如此（中文的字形与字距由它们决定）。英文界面沿用这套栈时，拉丁字形与
+ * 字距会被中文屏显字体接管（偏紧偏"印刷中文"），与英文排版预期不符。
+ *
+ * 三条边界：
+ *   1. **中文态逐像素不变**：本块只在 `lang` 以 `en` 开头时命中，`html[lang="zh-CN"]` 与
+ *      未设置 lang 的情形读到的仍是上面那两个栈（首帧静态 `lang="zh-CN"` 由 layout.tsx 保证，
+ *      真实 lang 由 LocaleProvider 挂载后写入 —— 见 src/lib/i18n/locale.ts 的 HTML_LANG）。
+ *   2. **拉丁字体在前、CJK 兜底在后**：英文界面偶尔仍会出现中文（用户自己输入的名字等），
+ *      兜底字体保证它有字形可用。
+ *   3. `@theme inline` 会把这两个变量的**取值内联**进 `.font-sans` / `.font-serif` 工具类
+ *      （编译产物是字面量、不引用 `var()`），只覆盖变量不足以改变工具类的字形 —— 所以本块
+ *      额外把这两个工具类在 en 作用域下重新指回变量。少了这一步就是「改了变量、真机上没生效」
+ *      的假修复（`font-serif` 在入口三页的标题上大量使用）。
+ */
+html[lang^='en'] {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, 'Noto Serif SC', 'Songti SC',
+    'SimSun', serif;
+}
+
+html[lang^='en'] .font-sans {
+  font-family: var(--font-sans);
+}
+
+html[lang^='en'] .font-serif {
+  font-family: var(--font-serif);
+}
+
+:root {
+  --background: oklch(0.99 0.006 25);
+  --foreground: oklch(0.20 0.04 20);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.04 20);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.04 20);
+  --primary: oklch(0.55 0.20 15);
+  --primary-foreground: oklch(0.98 0.01 20);
+  --secondary: oklch(0.96 0.04 15);
+  --secondary-foreground: oklch(0.40 0.12 20);
+  --muted: oklch(0.96 0.02 30);
+  --muted-foreground: oklch(0.55 0.05 25);
+  --accent: oklch(0.92 0.08 15);
+  --accent-foreground: oklch(0.25 0.15 20);
+  --destructive: oklch(0.60 0.28 27);
+  --border: oklch(0.90 0.025 25);
+  --input: oklch(0.88 0.03 25);
+  --ring: oklch(0.586 0.253 17.585 / 30%);
+  --chart-1: oklch(0.65 0.20 17);
+  --chart-2: oklch(0.75 0.15 25);
+  --chart-3: oklch(0.55 0.18 10);
+  --chart-4: oklch(0.82 0.10 30);
+  --chart-5: oklch(0.45 0.12 15);
+  --sidebar: oklch(0.98 0.01 25);
+  --sidebar-foreground: oklch(0.25 0.06 20);
+  --sidebar-primary: oklch(0.586 0.253 17.585);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.04 25);
+  --sidebar-accent-foreground: oklch(0.586 0.253 17.585);
+  --sidebar-border: oklch(0.92 0.02 25);
+  --sidebar-ring: oklch(0.586 0.253 17.585 / 25%);
+  --radius: 0.8rem;
+}
+
+.dark {
+  --background: oklch(0.155 0.01 45);
+  --foreground: oklch(0.96 0.008 60);
+  --card: oklch(0.195 0.012 45);
+  --card-foreground: oklch(0.96 0.008 60);
+  --popover: oklch(0.21 0.013 45);
+  --popover-foreground: oklch(0.96 0.008 60);
+  --primary: oklch(0.645 0.20 15);
+  --primary-foreground: oklch(0.97 0.012 15);
+  --secondary: oklch(0.25 0.014 45);
+  --secondary-foreground: oklch(0.96 0.008 60);
+  --muted: oklch(0.25 0.014 45);
+  --muted-foreground: oklch(0.68 0.02 50);
+  --accent: oklch(0.28 0.016 45);
+  --accent-foreground: oklch(0.96 0.008 60);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 13%);
+  --ring: oklch(0.645 0.20 15 / 40%);
+  --chart-1: oklch(0.81 0.117 11.638);
+  --chart-2: oklch(0.645 0.246 16.439);
+  --chart-3: oklch(0.586 0.253 17.585);
+  --chart-4: oklch(0.514 0.222 16.935);
+  --chart-5: oklch(0.455 0.188 13.697);
+  --sidebar: oklch(0.185 0.012 45);
+  --sidebar-foreground: oklch(0.96 0.008 60);
+  --sidebar-primary: oklch(0.645 0.20 15);
+  --sidebar-primary-foreground: oklch(0.97 0.012 15);
+  --sidebar-accent: oklch(0.25 0.014 45);
+  --sidebar-accent-foreground: oklch(0.96 0.008 60);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.645 0.20 15 / 40%);
+}
+
+/*
+ * UI 色调作用域（聊天装扮系统，注册表见 src/lib/chat-themes.ts 的 UI_THEMES）。
+ * chat-shell 在挂载时把选中的色调 id 写到 <html data-ui-theme>，
+ * html[data-ui-theme='x'] 的优先级（0-1-1）高于 .dark（0-1-0），可覆盖全局暗色变量。
+ * rose-night（默认）= 上方 .dark 变量，无需重复定义。
+ */
+
+/* 奶雾玫瑰（light） */
+html[data-ui-theme='rose-milk'] {
+  color-scheme: light;
+
+  --background: oklch(0.975 0.008 15);
+  --foreground: oklch(0.28 0.03 15);
+  --card: oklch(0.995 0.004 15);
+  --card-foreground: oklch(0.28 0.03 15);
+  --popover: oklch(0.995 0.004 15);
+  --popover-foreground: oklch(0.28 0.03 15);
+  --primary: oklch(0.6 0.14 10);
+  --primary-foreground: oklch(0.985 0.008 15);
+  --secondary: oklch(0.94 0.015 15);
+  --secondary-foreground: oklch(0.4 0.05 15);
+  --muted: oklch(0.945 0.012 15);
+  --muted-foreground: oklch(0.52 0.03 15);
+  --accent: oklch(0.93 0.02 15);
+  --accent-foreground: oklch(0.38 0.05 15);
+  --border: oklch(0.88 0.015 15);
+  --input: oklch(0.88 0.015 15);
+  --ring: oklch(0.6 0.14 10 / 35%);
+  --sidebar: oklch(0.965 0.01 15);
+  --sidebar-foreground: oklch(0.3 0.03 15);
+  --sidebar-primary: oklch(0.6 0.14 10);
+  --sidebar-primary-foreground: oklch(0.985 0.008 15);
+  --sidebar-accent: oklch(0.935 0.018 15);
+  --sidebar-accent-foreground: oklch(0.4 0.05 15);
+  --sidebar-border: oklch(0.885 0.015 15);
+  --sidebar-ring: oklch(0.6 0.14 10 / 30%);
+}
+
+/* 焦糖夜话（dark） */
+html[data-ui-theme='amber-night'] {
+  --background: oklch(0.165 0.014 70);
+  --foreground: oklch(0.95 0.012 80);
+  --card: oklch(0.205 0.016 70);
+  --card-foreground: oklch(0.95 0.012 80);
+  --popover: oklch(0.215 0.017 70);
+  --popover-foreground: oklch(0.95 0.012 80);
+  --primary: oklch(0.72 0.11 70);
+  --primary-foreground: oklch(0.21 0.03 70);
+  --secondary: oklch(0.26 0.018 70);
+  --secondary-foreground: oklch(0.95 0.012 80);
+  --muted: oklch(0.26 0.018 70);
+  --muted-foreground: oklch(0.68 0.03 75);
+  --accent: oklch(0.3 0.02 70);
+  --accent-foreground: oklch(0.95 0.012 80);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.72 0.11 70 / 40%);
+  --sidebar: oklch(0.195 0.016 70);
+  --sidebar-foreground: oklch(0.95 0.012 80);
+  --sidebar-primary: oklch(0.72 0.11 70);
+  --sidebar-primary-foreground: oklch(0.21 0.03 70);
+  --sidebar-accent: oklch(0.26 0.018 70);
+  --sidebar-accent-foreground: oklch(0.95 0.012 80);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.72 0.11 70 / 35%);
+}
+
+/* 奶油杏子（light） */
+html[data-ui-theme='amber-milk'] {
+  color-scheme: light;
+
+  --background: oklch(0.972 0.012 80);
+  --foreground: oklch(0.3 0.03 65);
+  --card: oklch(0.99 0.006 80);
+  --card-foreground: oklch(0.3 0.03 65);
+  --popover: oklch(0.99 0.006 80);
+  --popover-foreground: oklch(0.3 0.03 65);
+  --primary: oklch(0.65 0.11 65);
+  --primary-foreground: oklch(0.985 0.008 80);
+  --secondary: oklch(0.94 0.02 75);
+  --secondary-foreground: oklch(0.42 0.05 65);
+  --muted: oklch(0.94 0.02 75);
+  --muted-foreground: oklch(0.52 0.035 70);
+  --accent: oklch(0.925 0.025 75);
+  --accent-foreground: oklch(0.4 0.05 65);
+  --border: oklch(0.875 0.02 75);
+  --input: oklch(0.875 0.02 75);
+  --ring: oklch(0.65 0.11 65 / 35%);
+  --sidebar: oklch(0.96 0.016 80);
+  --sidebar-foreground: oklch(0.32 0.03 65);
+  --sidebar-primary: oklch(0.65 0.11 65);
+  --sidebar-primary-foreground: oklch(0.985 0.008 80);
+  --sidebar-accent: oklch(0.93 0.025 75);
+  --sidebar-accent-foreground: oklch(0.42 0.05 65);
+  --sidebar-border: oklch(0.88 0.02 75);
+  --sidebar-ring: oklch(0.65 0.11 65 / 30%);
+}
+
+/* 雾蓝深夜（dark） */
+html[data-ui-theme='mist-night'] {
+  --background: oklch(0.16 0.012 240);
+  --foreground: oklch(0.94 0.008 230);
+  --card: oklch(0.2 0.014 240);
+  --card-foreground: oklch(0.94 0.008 230);
+  --popover: oklch(0.21 0.015 240);
+  --popover-foreground: oklch(0.94 0.008 230);
+  --primary: oklch(0.68 0.07 235);
+  --primary-foreground: oklch(0.2 0.02 240);
+  --secondary: oklch(0.25 0.016 240);
+  --secondary-foreground: oklch(0.94 0.008 230);
+  --muted: oklch(0.25 0.016 240);
+  --muted-foreground: oklch(0.66 0.02 235);
+  --accent: oklch(0.29 0.018 240);
+  --accent-foreground: oklch(0.94 0.008 230);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.68 0.07 235 / 40%);
+  --sidebar: oklch(0.19 0.014 240);
+  --sidebar-foreground: oklch(0.94 0.008 230);
+  --sidebar-primary: oklch(0.68 0.07 235);
+  --sidebar-primary-foreground: oklch(0.2 0.02 240);
+  --sidebar-accent: oklch(0.25 0.016 240);
+  --sidebar-accent-foreground: oklch(0.94 0.008 230);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.68 0.07 235 / 35%);
+}
+
+/* 晨雾微光（light） */
+html[data-ui-theme='mist-milk'] {
+  color-scheme: light;
+
+  --background: oklch(0.968 0.008 230);
+  --foreground: oklch(0.28 0.02 240);
+  --card: oklch(0.99 0.004 230);
+  --card-foreground: oklch(0.28 0.02 240);
+  --popover: oklch(0.99 0.004 230);
+  --popover-foreground: oklch(0.28 0.02 240);
+  --primary: oklch(0.58 0.07 235);
+  --primary-foreground: oklch(0.985 0.006 230);
+  --secondary: oklch(0.935 0.012 230);
+  --secondary-foreground: oklch(0.38 0.03 240);
+  --muted: oklch(0.935 0.012 230);
+  --muted-foreground: oklch(0.5 0.02 235);
+  --accent: oklch(0.92 0.015 230);
+  --accent-foreground: oklch(0.36 0.03 240);
+  --border: oklch(0.87 0.012 230);
+  --input: oklch(0.87 0.012 230);
+  --ring: oklch(0.58 0.07 235 / 35%);
+  --sidebar: oklch(0.955 0.01 230);
+  --sidebar-foreground: oklch(0.3 0.02 240);
+  --sidebar-primary: oklch(0.58 0.07 235);
+  --sidebar-primary-foreground: oklch(0.985 0.006 230);
+  --sidebar-accent: oklch(0.925 0.014 230);
+  --sidebar-accent-foreground: oklch(0.38 0.03 240);
+  --sidebar-border: oklch(0.875 0.012 230);
+  --sidebar-ring: oklch(0.58 0.07 235 / 30%);
+}
+
+/* 松间月色（dark） */
+html[data-ui-theme='sage-night'] {
+  --background: oklch(0.165 0.012 150);
+  --foreground: oklch(0.945 0.01 140);
+  --card: oklch(0.205 0.014 150);
+  --card-foreground: oklch(0.945 0.01 140);
+  --popover: oklch(0.215 0.015 150);
+  --popover-foreground: oklch(0.945 0.01 140);
+  --primary: oklch(0.7 0.07 145);
+  --primary-foreground: oklch(0.2 0.02 150);
+  --secondary: oklch(0.26 0.016 150);
+  --secondary-foreground: oklch(0.945 0.01 140);
+  --muted: oklch(0.26 0.016 150);
+  --muted-foreground: oklch(0.66 0.025 145);
+  --accent: oklch(0.295 0.018 150);
+  --accent-foreground: oklch(0.945 0.01 140);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.7 0.07 145 / 40%);
+  --sidebar: oklch(0.195 0.014 150);
+  --sidebar-foreground: oklch(0.945 0.01 140);
+  --sidebar-primary: oklch(0.7 0.07 145);
+  --sidebar-primary-foreground: oklch(0.2 0.02 150);
+  --sidebar-accent: oklch(0.26 0.016 150);
+  --sidebar-accent-foreground: oklch(0.945 0.01 140);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.7 0.07 145 / 35%);
+}
+
+/* 雨后青提（light） */
+html[data-ui-theme='sage-milk'] {
+  color-scheme: light;
+
+  --background: oklch(0.97 0.01 140);
+  --foreground: oklch(0.29 0.025 145);
+  --card: oklch(0.992 0.005 140);
+  --card-foreground: oklch(0.29 0.025 145);
+  --popover: oklch(0.992 0.005 140);
+  --popover-foreground: oklch(0.29 0.025 145);
+  --primary: oklch(0.6 0.07 145);
+  --primary-foreground: oklch(0.985 0.006 140);
+  --secondary: oklch(0.94 0.015 140);
+  --secondary-foreground: oklch(0.4 0.04 145);
+  --muted: oklch(0.94 0.015 140);
+  --muted-foreground: oklch(0.51 0.025 145);
+  --accent: oklch(0.925 0.02 140);
+  --accent-foreground: oklch(0.38 0.04 145);
+  --border: oklch(0.875 0.018 140);
+  --input: oklch(0.875 0.018 140);
+  --ring: oklch(0.6 0.07 145 / 35%);
+  --sidebar: oklch(0.958 0.013 140);
+  --sidebar-foreground: oklch(0.31 0.025 145);
+  --sidebar-primary: oklch(0.6 0.07 145);
+  --sidebar-primary-foreground: oklch(0.985 0.006 140);
+  --sidebar-accent: oklch(0.93 0.018 140);
+  --sidebar-accent-foreground: oklch(0.4 0.04 145);
+  --sidebar-border: oklch(0.88 0.018 140);
+  --sidebar-ring: oklch(0.6 0.07 145 / 30%);
+}
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+
+    font-family: var(--font-sans);
+
+  }
+}
+
+/* ===== 心动动效 ===== */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.12);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes voice-wave {
+  0%, 100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.anim-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim-heartbeat {
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+
+.typing-dot {
+  animation: typing-dot 1.2s ease-in-out infinite;
+}
+
+.voice-wave-bar {
+  animation: voice-wave 0.9s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/*
+ * 梦幻深蓝表面（开屏 / 登录 / 注册三页专用）
+ * ---------------------------------------------------------------------------
+ * 作用域刻意收窄到 [data-surface='dream-blue']，而不是改 .dark：
+ * 聊天页的默认 UI 色调就是 .dark，且 8 套色调与角色气泡色都挂在同一批变量上。
+ * 一旦在 .dark 里写蓝色 primary，聊天页会连带变色，用户自选的色调与皮肤也会被盖掉。
+ *
+ * 色相取 230-250（蓝），chroma ≤ 0.16（低饱和）：
+ *   - 避开 280+ 的紫 / indigo —— 设计规范禁止的其实是「蓝紫 AI 味渐变」
+ *   - 避开高饱和荧光 —— 那是科技蓝 / 赛博朋克，同样在禁止清单里
+ * 取色锚点来自角色主题色那条蓝族（#8ec9ed / #4da5dc / #3d9fd7），
+ * 与 DeepSeek 蓝白形象同族，视觉上不会与聊天页打架。
+ */
+[data-surface='dream-blue'] {
+  color-scheme: dark;
+
+  --background: oklch(0.19 0.045 245);
+  --foreground: oklch(0.96 0.012 240);
+  --card: oklch(0.24 0.05 244);
+  --card-foreground: oklch(0.96 0.012 240);
+  --popover: oklch(0.25 0.05 244);
+  --popover-foreground: oklch(0.96 0.012 240);
+
+  /* 主色：比背景亮、但饱和度克制的雾蓝，用作按钮与光斑 */
+  --primary: oklch(0.72 0.11 238);
+  --primary-foreground: oklch(0.18 0.04 245);
+  --secondary: oklch(0.30 0.05 243);
+  --secondary-foreground: oklch(0.94 0.014 240);
+  --muted: oklch(0.30 0.045 243);
+  --muted-foreground: oklch(0.72 0.035 240);
+  --accent: oklch(0.34 0.055 241);
+  --accent-foreground: oklch(0.95 0.014 240);
+
+  /*
+   * 错误文案色。取 0.70：这个表面里它只当文字色用（没有任何 bg-destructive），
+   * 而 0.66 在 `--muted` 底色上对比不足（实测 3.99，低于 WCAG AA 的 4.5）；
+   * 0.70 让全部实际用到的底色（background / card-60% / muted / muted-40%）
+   * 都达到 AA。判据与实测数值见 tests/dream-blue-contrast.test.ts（真算 WCAG）。
+   */
+  --destructive: oklch(0.70 0.19 25);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.72 0.11 238 / 42%);
+  --sidebar: oklch(0.22 0.048 244);
+  --sidebar-foreground: oklch(0.96 0.012 240);
+  --sidebar-primary: oklch(0.72 0.11 238);
+  --sidebar-primary-foreground: oklch(0.18 0.04 245);
+  --sidebar-accent: oklch(0.30 0.05 243);
+  --sidebar-accent-foreground: oklch(0.94 0.014 240);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --sidebar-ring: oklch(0.72 0.11 238 / 42%);
+}
+
+/*
+ * 梦幻玫瑰表面（入口三页 + 支付两页专用；表面 id 由 src/lib/palette.ts 的 PALETTE_SURFACE 给出，
+ * 页面一律写成 data-surface={surface}，不得硬编码字面量）
+ * ---------------------------------------------------------------------------
+ * 与「梦幻深蓝」同构，只把色相换成暖玫瑰带 [0, 70)、chroma ≤ 0.16（低饱和，避免荧光/霓虹）。
+ * 默认入口页用玫瑰、支付页用梦幻蓝，访客在支付页可以切成另一套 —— 两套都以本块这种
+ * 「作用域表面」形式存在，绝不改 .dark 全局变量。
+ *
+ * 陷阱（必须遵守）：不得直接把 .dark 的变量拷进来。`.dark` 的 --primary / --primary-foreground
+ * 这一对实测只有 3.33:1 —— .dark 今天没有任何 AA 门禁覆盖它，但本表面会继承一份镜像门禁，
+ * 拷进来必红。所以这里自带一对主色：--primary-foreground on --primary 实测 7.20:1。
+ * 取值与实测判据见 tests/dream-rose-contrast.test.ts（真算 WCAG）与 tests/palette-surfaces.test.ts。
+ *
+ * 另一条陷阱：本块的 CSS 取值只允许出现在这里；`.dark` 与 dream-blue 块都不得出现同值拷贝。
+ */
+[data-surface='dream-rose'] {
+  color-scheme: dark;
+
+  --background: oklch(0.19 0.045 15);
+  --foreground: oklch(0.96 0.012 20);
+  --card: oklch(0.24 0.05 14);
+  --card-foreground: oklch(0.96 0.012 20);
+  --popover: oklch(0.25 0.05 14);
+  --popover-foreground: oklch(0.96 0.012 20);
+
+  /* 主色：比背景亮、饱和度克制的暖玫瑰，用作按钮与光斑 */
+  --primary: oklch(0.72 0.13 12);
+  --primary-foreground: oklch(0.18 0.04 15);
+  --secondary: oklch(0.30 0.05 13);
+  --secondary-foreground: oklch(0.94 0.014 20);
+  --muted: oklch(0.30 0.045 13);
+  --muted-foreground: oklch(0.72 0.035 18);
+  --accent: oklch(0.34 0.055 14);
+  --accent-foreground: oklch(0.95 0.014 20);
+
+  /*
+   * 错误文案色。同 dream-blue：这个表面里它也只当文字色用（没有任何 bg-destructive），
+   * 0.70 让全部实际用到的底色（background / card-60% / muted / muted-40%）都达到 AA。
+   */
+  --destructive: oklch(0.70 0.19 25);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.72 0.13 12 / 42%);
+  --sidebar: oklch(0.22 0.048 14);
+  --sidebar-foreground: oklch(0.96 0.012 20);
+  --sidebar-primary: oklch(0.72 0.13 12);
+  --sidebar-primary-foreground: oklch(0.18 0.04 15);
+  --sidebar-accent: oklch(0.30 0.05 13);
+  --sidebar-accent-foreground: oklch(0.94 0.014 20);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --sidebar-ring: oklch(0.72 0.13 12 / 42%);
+}
+
+/*
+ * 梦幻玫瑰浅色 / 梦幻深蓝浅色表面（第五轮 U5 的「浅色变体」）
+ * ---------------------------------------------------------------------------
+ * 这两块今天由**当前 UI 色调的明暗自动选中**（第六轮 N1/N2；第五轮那个三态控件与
+ * `off` / `dark` / `soft` 档位已按用户指令整套删除，见规格 §6.1.2 N-1）：
+ * `resolveToneMode(uiTheme.id)`（`src/lib/chat-layout.ts`）给出 `'light'` / `'dark'`，
+ * `paletteSurfaceFor(resolved, toneMode)`（`src/lib/palette.ts`）据此在「同族的深浅两块」
+ * 之间选一个。于是今天：
+ *   - 只有 4 个 `*-milk`（浅色调：`UI_THEMES` 里 `mode: 'light'` 的四项）会命中这两块 `*-soft`；
+ *     4 个 `*-night`（深色调）走上面那两块深色表面。
+ *   - **从没选过风格**的访客（`palettePreference === null`）三区**根本不挂** `data-surface`：
+ *     那是「界面逐像素不变」，不是某个档位（`chat-shell.tsx` 的 `chromeSurface`；
+ *     口径见规格 §4.9 判据 2）—— 旧的 `off` 档已不存在。
+ *
+ * 两块都是**完整的一整套 token**（各 26 个 `--*` 声明 = 判据清单 25 个 + 1 个无害的
+ * `--destructive`），不允许只覆盖 background / foreground：三区（侧栏 / 聊天头部 / 输入区）
+ * 是**各自**挂 `data-surface` 的兄弟节点（不挂共享祖先），任何缺项都会在其中一个区里回落到
+ * .dark 的暖褐/冷蓝，出现「半浅半深」的串色。判据见 tests/dream-rose-contrast.test.ts 的
+ * `the two soft surfaces are light scopes with a full token set and AA text pairs`。
+ *
+ * 取值是同族深色表面的「奶白」对位：L 高、chroma 很小（轻微色偏，不做荧光），
+ * 色相仍是各自的 15 / 235。但主色对必须**反向**选 —— 浅底上的按钮文字压在亮色上，
+ * 深色表面那对 0.72 的亮主色会直接掉到 AA 以下（实测 0.60 只有 4.05），
+ * 所以这里取 0.54 的深主色 + 近白前景（实测 5.21 / 4.78）。这一对是门禁红线：
+ * `dream-blue-soft` 的 4.78 是十对里最紧的（余量 0.28）⇒ 微调这两块任何色值前必须重跑
+ * tests/dream-rose-contrast.test.ts。
+ */
+[data-surface='dream-rose-soft'] {
+  color-scheme: light;
+
+  --background: oklch(0.975 0.008 15);
+  --foreground: oklch(0.28 0.03 15);
+  --card: oklch(0.995 0.004 15);
+  --card-foreground: oklch(0.28 0.03 15);
+  --popover: oklch(0.995 0.004 15);
+  --popover-foreground: oklch(0.28 0.03 15);
+
+  /* 主色：浅底上要更深才够对比度（--primary-foreground on --primary = 5.21:1） */
+  --primary: oklch(0.54 0.14 10);
+  --primary-foreground: oklch(0.985 0.008 15);
+  --secondary: oklch(0.94 0.012 15);
+  --secondary-foreground: oklch(0.32 0.03 15);
+  --muted: oklch(0.945 0.01 15);
+  --muted-foreground: oklch(0.50 0.03 15);
+  --accent: oklch(0.93 0.015 12);
+  --accent-foreground: oklch(0.30 0.03 15);
+
+  /* 错误文案色：浅底上取 0.55（background 上 4.96、muted 上 4.54，都过 AA） */
+  --destructive: oklch(0.55 0.19 25);
+  --border: oklch(0.88 0.015 15);
+  --input: oklch(0.88 0.015 15);
+  --ring: oklch(0.54 0.14 10 / 42%);
+  --sidebar: oklch(0.965 0.012 15);
+  --sidebar-foreground: oklch(0.30 0.03 15);
+  --sidebar-primary: oklch(0.54 0.14 10);
+  --sidebar-primary-foreground: oklch(0.985 0.008 15);
+  --sidebar-accent: oklch(0.94 0.012 15);
+  --sidebar-accent-foreground: oklch(0.32 0.03 15);
+  --sidebar-border: oklch(0.88 0.015 15);
+  --sidebar-ring: oklch(0.54 0.14 10 / 42%);
+}
+
+/* 与梦幻玫瑰浅色同构，只把色相换成冷蓝族 235（main pair 实测 4.78:1，仍过 AA）。 */
+[data-surface='dream-blue-soft'] {
+  color-scheme: light;
+
+  --background: oklch(0.975 0.008 235);
+  --foreground: oklch(0.28 0.03 235);
+  --card: oklch(0.995 0.004 235);
+  --card-foreground: oklch(0.28 0.03 235);
+  --popover: oklch(0.995 0.004 235);
+  --popover-foreground: oklch(0.28 0.03 235);
+
+  /* 主色：与玫瑰浅色同一档深度，只是 chroma 更低（--primary-foreground on --primary = 4.78:1） */
+  --primary: oklch(0.54 0.07 235);
+  --primary-foreground: oklch(0.985 0.006 235);
+  --secondary: oklch(0.94 0.012 235);
+  --secondary-foreground: oklch(0.32 0.03 235);
+  --muted: oklch(0.945 0.01 235);
+  --muted-foreground: oklch(0.50 0.03 235);
+  --accent: oklch(0.93 0.015 232);
+  --accent-foreground: oklch(0.30 0.03 235);
+  --destructive: oklch(0.55 0.19 25);
+  --border: oklch(0.88 0.015 235);
+  --input: oklch(0.88 0.015 235);
+  --ring: oklch(0.54 0.07 235 / 42%);
+  --sidebar: oklch(0.965 0.012 235);
+  --sidebar-foreground: oklch(0.30 0.03 235);
+  --sidebar-primary: oklch(0.54 0.07 235);
+  --sidebar-primary-foreground: oklch(0.985 0.006 235);
+  --sidebar-accent: oklch(0.94 0.012 235);
+  --sidebar-accent-foreground: oklch(0.32 0.03 235);
+  --sidebar-border: oklch(0.88 0.015 235);
+  --sidebar-ring: oklch(0.54 0.07 235 / 42%);
+}
+
+/*
+ * 氛围光：深夜海面的雾感，而不是霓虹。
+ * 两团低透明度径向渐变给「梦幻」以纵深，同时不产生高频纹理（文字区域可读性优先）。
+ */
+.dream-blue-aurora {
+  background-image:
+    radial-gradient(ellipse 70% 55% at 50% -10%, oklch(0.72 0.11 238 / 26%), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 85% 100%, oklch(0.66 0.09 250 / 20%), transparent 72%);
+}
+
+/*
+ * 梦幻玫瑰的同一层氛围光：取色锚点与 --primary 同族（暖玫瑰 + 一点胭脂紫作纵深）。
+ * 与 .dream-blue-aurora 结构一致，只有色值不同 —— 页面按 surface 派生类名，
+ * 两个类都必须存在（tests/palette-surfaces.test.ts 钉住）。
+ */
+.dream-rose-aurora {
+  background-image:
+    radial-gradient(ellipse 70% 55% at 50% -10%, oklch(0.72 0.13 12 / 26%), transparent 70%),
+    radial-gradient(ellipse 55% 45% at 85% 100%, oklch(0.66 0.11 350 / 20%), transparent 72%);
+}
