@@ -11,9 +11,11 @@ test('OSS-037 export uses a reviewed allowlist and omits Git history, env, data 
   for(const dir of ['.git','src','data','tests/fixtures/billing','docs/handoffs'])mkdirSync(path.join(root,dir),{recursive:true});
   for(const file of ['.git/config','.env.local','data/private-message','tests/fixtures/billing/order.json','docs/handoffs/customer.md'])writeFileSync(path.join(root,file),'private');
   writeFileSync(path.join(root,'src/example.ts'),'export const edition="personal";');writeFileSync(path.join(root,'.env.example'),'DEEPSEEK_API_KEY=\n');
+  writeFileSync(path.join(root,'README.en.md'),'# Personal edition\nEnglish startup instructions\n');
   seedRequiredDocuments(root);
   exportPersonalCandidate(root,target);
   assert.ok(existsSync(path.join(target,'src/example.ts')));assert.ok(existsSync(path.join(target,'.env.example')));
+  assert.equal(readFileSync(path.join(target,'README.en.md'),'utf8'),'# Personal edition\nEnglish startup instructions\n');
   for(const file of ['.git','.env.local','data','tests/fixtures/billing','docs/handoffs'])assert.equal(existsSync(path.join(target,file)),false);
   assert.equal(JSON.parse(readFileSync(path.join(target,'EXPORT-MANIFEST.json'),'utf8')).gitHistoryIncluded,false);
   assert.throws(()=>exportPersonalCandidate(root,target),/new export directory/);

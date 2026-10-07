@@ -90,7 +90,7 @@ test('review S7 offline explicit Gemini compatibility is available only in crede
 });
 
 test('review S3 doctor shares validation of Gemini model and public letter origin without breaking chat',()=>{
- assert.throws(()=>getPersonalConfig({OPENROUTER_API_KEY:'fixture',AI_TTS_PROVIDER:'openrouter-gemini',AI_TTS_MODEL:'unsupported-model'}),/AI_TTS_MODEL/);
+ assert.throws(()=>getPersonalConfig({OPENROUTER_API_KEY:'fixture',AI_TTS_PROVIDER:'openrouter-gemini',AI_TTS_MODEL:'invalid model'}),/AI_TTS_MODEL/);
  assert.throws(()=>getPersonalConfig({LETTER_PUBLIC_BASE_URL:'http://localhost:5000'}),/LETTER_PUBLIC_BASE_URL/);
  const mailError=getPersonalConfig({DEEPSEEK_API_KEY:'fixture',LETTER_PUBLIC_BASE_URL:'http://localhost:5000'},{strict:false});
  assert.equal(mailError.capabilities.chat.enabled,true);assert.equal(mailError.capabilities.email.enabled,false);assert.match(mailError.configurationErrors.join(),/LETTER_PUBLIC_BASE_URL/);

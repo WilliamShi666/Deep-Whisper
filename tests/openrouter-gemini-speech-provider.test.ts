@@ -69,16 +69,16 @@ test('the default speech provider is wrapped in a fallback chain', async () => {
   );
 });
 
-test('Gemini TTS rejects model drift, unmapped voices, and malformed audio before persistence', async () => {
+test('Gemini TTS rejects malformed model IDs, unmapped voices, and malformed audio before persistence', async () => {
   const invalidModel = new OpenRouterGeminiSpeechProvider({
     AI_TTS_PROVIDER: 'openrouter-gemini',
-    AI_TTS_MODEL: 'google/another-tts-model',
+    AI_TTS_MODEL: 'invalid model',
     OPENROUTER_API_KEY: 'test-key-not-real',
     OPENROUTER_BASE_URL: TEST_ENDPOINT,
   });
   await assert.rejects(
     invalidModel.synthesize({ text: 'test', voice: 'female-tianmei' }),
-    /google\/gemini-3\.1-flash-tts-preview/,
+    /AI_TTS_MODEL/,
   );
 
   let calls = 0;

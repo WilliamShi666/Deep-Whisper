@@ -19,7 +19,8 @@ import { readResponseJson } from '@/lib/ai/limited-response';
  * 上面两组上限都取自 `GET /api/v1/images/models/<slug>/endpoints` 的实时
  * `supported_parameters`，不照抄网页上的动态能力列表。
  */
-import { OPENROUTER_GEMINI_IMAGE_MODEL, OPENROUTER_GPT_IMAGE_MODEL, OPENROUTER_IMAGE_MODELS, OPENROUTER_IMAGE_MODEL, type OpenRouterImageModel } from '../model-defaults';
+import { OPENROUTER_GEMINI_IMAGE_MODEL, OPENROUTER_GPT_IMAGE_MODEL, OPENROUTER_IMAGE_MODEL } from '../model-defaults';
+import { readModelId } from '@/lib/config/runtime';
 export { OPENROUTER_GEMINI_IMAGE_MODEL, OPENROUTER_GPT_IMAGE_MODEL, OPENROUTER_IMAGE_MODELS, OPENROUTER_IMAGE_MODEL, type OpenRouterImageModel } from '../model-defaults';
 
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
@@ -104,9 +105,6 @@ function requireApiKey(env: RuntimeEnvironment): string {
   return value;
 }
 
-function isSupportedModel(model: string): model is OpenRouterImageModel {
-  return (OPENROUTER_IMAGE_MODELS as readonly string[]).includes(model);
-}
 
 function decodeBase64(value: string): Uint8Array {
   const normalized = value.trim();
@@ -256,15 +254,11 @@ export class OpenRouterImageProvider implements ImageProvider {
   private readonly baseUrl: string;
   private readonly maxOutputBytes: number;
   private readonly retryDelayMs: number;
-  private readonly model: OpenRouterImageModel;
+  private readonly model: string;
   private readonly quality: string;
 
   constructor(private readonly options: OpenRouterImageProviderOptions) {
-    if (!isSupportedModel(options.model)) {
-      throw new Error(
-        `OpenRouter Image model must be one of: ${OPENROUTER_IMAGE_MODELS.join(', ')}`,
-      );
-    }
+    readModelId(options.model, 'AI_IMAGE_MODEL');
     this.model = options.model;
     this.quality = options.quality ?? DEFAULT_GPT_QUALITY;
     if (!GPT_QUALITY_VALUES.has(this.quality)) {
@@ -342,7 +336,7 @@ export class OpenRouterImageProvider implements ImageProvider {
       n: 1,
       ...(this.model === OPENROUTER_GPT_IMAGE_MODEL
         ? { quality: this.quality }
-        : { resolution }),
+        : this.model === OPENROUTER_GEMINI_IMAGE_MODEL ? { resolution } : {}),
       aspect_ratio: aspectRatio,
       input_references: input.referenceImages.map((reference) => ({
         type: 'image_url',

@@ -132,9 +132,6 @@ export class QwenAudioSpeechProvider implements SpeechProvider {
     if (text.length > MAX_TEXT_LENGTH) throw new Error('Speech synthesis text is too long');
 
     const model = getSpeechModelFor('qwen-audio', this.env) || QWEN_AUDIO_TTS_MODEL;
-    if (model !== QWEN_AUDIO_TTS_MODEL) {
-      throw new Error(`Qwen TTS model must be ${QWEN_AUDIO_TTS_MODEL}`);
-    }
     // 白名单校验必须排在取 key 之前：非法音色不能因为缺 key 而泄露配置状态，
     // 更要紧的是**绝不能发出付费请求**（测试断言 unmapped voice ⇒ 0 次网络调用）。
     const publicVoice = toPublicVoiceId(input.voice);

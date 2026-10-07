@@ -55,7 +55,7 @@ pnpm dev
 | 变量 | 默认 |
 |---|---|
 | `AI_CHAT_PROVIDER` / `AI_VISION_PROVIDER` | `deepseek` |
-| `AI_CHAT_MODEL` / `AI_VISION_MODEL` | `deepseek-flash` |
+| `AI_CHAT_MODEL` / `AI_VISION_MODEL` | 各自默认 `deepseek-flash`；聊天与上传审核独立 |
 | `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` |
 | `AI_IMAGE_PROVIDER` | `openrouter` |
 | `AI_IMAGE_MODEL` | `openai/gpt-image-2` |
@@ -65,9 +65,19 @@ pnpm dev
 | `DASHSCOPE_TTS_BASE_URL` | `https://maas.qianwenaiapi.com/api/v1` |
 | `DASHSCOPE_EMBEDDING_BASE_URL` | `https://maas.qianwenaiapi.com/compatible-mode/v1` |
 | `DASHSCOPE_AUDIO_HOST_SUFFIX` | `.aliyuncs.com`，临时音频下载的HTTPS主机白名单 |
-| `AI_EMBEDDING_PROVIDER` | `dashscope`，模型固定text-embedding-v4、1024维，单批≤10 |
+| `AI_EMBEDDING_PROVIDER` | `dashscope`，1024维，单批≤10 |
 
-推荐profile两条端点对应同一千问AI平台key。阿里云百炼的账户/地区/key不自动等同，改用其他profile时须提供它对应的地址并验证权限。doctor能校验结构与已支持的TTS模型，不证明云账户模型权限或费用。没有implicit MiniMax后备。两把语音key都有时Qwen失败才回退Gemini，按性别兼容音色，回退会换声；只有Qwen时无未配置后备请求。
+推荐profile两条端点对应同一千问AI平台key。阿里云百炼的账户/地区/key不自动等同，改用其他profile时须提供它对应的地址并验证权限。doctor能校验配置结构与模型ID格式，不证明云账户模型权限或费用。没有implicit MiniMax后备。两把语音key都有时Qwen失败才回退Gemini，按性别兼容音色，回退会换声；只有Qwen时无未配置后备请求。
+
+### 同一提供商内切换模型
+
+`AI_CHAT_MODEL`、`AI_VISION_MODEL`、`AI_IMAGE_MODEL`、`AI_TTS_MODEL`、`AI_EMBEDDING_MODEL` 都是可选的模型ID，不是密钥。Embedding模型默认 `text-embedding-v4`。只更改对应变量并重启，不改变provider、key和endpoint；新增云端模型权限可能需要供应商账户设置。模型ID来自自己的供应商目录，非空、无空白且不超过200字符。格式通过不代表模型可用。
+
+聊天模型要兼容Chat Completions流式、JSON、thinking设置；图片聊天还需要多模态能力。`AI_VISION_MODEL`独立控制上传安全审核，默认不随聊天模型变化。图像模型须兼容OpenRouter `/images`、参考图与PNG/JPEG/WebP输出；两个内置模型保留GPT的quality或Gemini的resolution，其他ID不发送这两个特有参数，采用上游默认画质。TTS模型必须兼容当前语音provider的请求、音色与音频格式；不能将实时/WebSocket/自定义音色模型ID直接当作现有HTTP合成模型使用。`AI_TTS_MODEL`只作用于主链路，Qwen的Gemini回退仍用默认模型。原语音缓存不会自动重生成，新消息使用新模型。
+
+Embedding须接受 `/embeddings`、`dimensions=1024`、`encoding_format=float`。chat与worker使用同一个配置模型命名空间，召回只比较同模型/维度/正文版本向量。切换后后台有界补建已有记忆的新向量，旧facts/FTS不删除；关键词召回继续，补建产生API用量。新模型不可用时可恢复原ID或用keyword模式，不需要删除data或重置库。
+
+英文快速上手见 [README.en.md](../../README.en.md)，中文步骤见 [README.md](../../README.md)。
 
 ## 站内信与可选邮箱转发
 

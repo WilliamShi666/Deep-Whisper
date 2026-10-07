@@ -99,3 +99,12 @@
 E2E至少覆盖：最小配置dev与build/start、完整配置mock媒体、缺可选key、两伴侣隔离与换形象、SSE断开、点击语音/换音色、上传审核、重启恢复、关键词/混合记忆与删除、站内信/SMTP/停收、desktop/mobile中英两色调、远程owner未登录保护、备份恢复。macOS/Windows/Linux分别记录安装和启动证据。离线E2E不证明真实音色、真实生图或邮箱实际投递；真实live每项按明确请求数/费用门禁和授权记录，首次读取 [现有canary runbook](../runbooks/ai-provider-live-canaries.md)，不得为测试自动群发或多次生成。
 
 审查勘误（2026-10-07）：015/029明确原有文本整理入口的资格，不为开场白或纯图输入创造用户文本来源；028把同scope显式证据依赖纳入来源遗忘，避免成功删除来源后继续召回其推断内容。未关联画像/关系摘要不因此删除；其他伴侣或无证据关联的记忆不扩大删除。由独立reviewer复核相应真实SQLite与路由fixtures。
+
+## 同提供商模型配置补充（2026-10-07）
+
+- OSS-039：五个可选模型变量 AI_CHAT_MODEL / AI_VISION_MODEL / AI_IMAGE_MODEL / AI_TTS_MODEL / AI_EMBEDDING_MODEL 从共同runtime入口解析；不改供应商、密钥、API响应与SSE。缺省保留原模型，审核默认独立deepseek-flash；语音回退保留默认Gemini。模型ID格式校验不会替代供应商权限或兼容性验证。
+- OSS-040：模型ID实际传到transport，保留请求超时、响应校验、音色映射、受限临时音频下载。内置两图像模型参数维持原状，其他兼容/images模型采用公共参数及上游默认画质。缓存语音不自动失效，新合成使用新配置。
+- OSS-041：Embedding默认text-embedding-v4、1024维；查询和worker共享配置模型命名空间，同模型/维度/内容版本才参与余弦检索。模型切换异步有界重建（含历史completed任务），facts与FTS保持，不混向量空间、不发真实测试请求，不为同目标失败任务无界重置重试预算。
+- OSS-042：中英文README与两env模板说明必填key和可选模型ID、提供商兼容要求、重启与向量补建用量。公开导出保留英文README，更新发布manifest。
+
+验证：临时SQLite的模型切换/重建/租约/重试行为测试，模拟transport的模型字段与媒体字节契约，独立code/spec复核；本次不扩展浏览器端到端或付费live验收。

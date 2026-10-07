@@ -15,7 +15,7 @@ export interface ProviderConfig {
   visionSafety: {provider: VisionProviderId; model: string};
   image: {provider: ImageProviderId; model: string};
   speech: {provider: SpeechProviderId; model: string};
-  embedding: {provider: EmbeddingProviderId};
+  embedding: {provider: EmbeddingProviderId; model: string};
   objectStorage: {provider: ObjectStorageProviderId};
   email: {provider: EmailProviderId; fromAddress: string; replyTo?: string; smtp?: {host: string; port: number; user: string; password: string}};
 }
@@ -61,16 +61,26 @@ export function getLetterPublicBaseUrl(env: RuntimeEnvironment=process.env, appE
   return url.origin;
 }
 export function getSpeechMode(_env: RuntimeEnvironment=process.env): SpeechMode {return 'web';}
+/** Model IDs are provider configuration, not a hard-coded availability catalogue. */
+export function readModelId(value: string, name: string): string {
+  if (!value || value.length > 200 || /\s|[\u0000-\u001f\u007f]/.test(value)) {
+    throw new Error(`${name} must be a model ID without whitespace (maximum 200 characters)`);
+  }
+  return value;
+}
+function modelValue(env: RuntimeEnvironment, name: string, fallback: string): string {
+  return readModelId(readConfiguredValue(env, name) || fallback, name);
+}
 export function getProviderConfig(env: RuntimeEnvironment=process.env): ProviderConfig {
-  const chatModel=readConfiguredValue(env,'AI_CHAT_MODEL')||DEEPSEEK_VISION_MODEL;
+  const chatModel=modelValue(env,'AI_CHAT_MODEL',DEEPSEEK_VISION_MODEL);
   const speechProvider=enumValue(env,'AI_TTS_PROVIDER',['qwen-audio','openrouter-gemini'] as const,readConfiguredValue(env,'DASHSCOPE_API_KEY')?'qwen-audio':readConfiguredValue(env,'OPENROUTER_API_KEY')?'openrouter-gemini':'qwen-audio');
   const emailProvider=enumValue(env,'EMAIL_PROVIDER',['none','smtp','resend'] as const,'none');
   return {
     chat:{provider:enumValue(env,'AI_CHAT_PROVIDER',['deepseek'] as const,'deepseek'),model:chatModel},
-    visionSafety:{provider:enumValue(env,'AI_VISION_PROVIDER',['deepseek'] as const,'deepseek'),model:readConfiguredValue(env,'AI_VISION_MODEL')||chatModel},
-    image:{provider:enumValue(env,'AI_IMAGE_PROVIDER',['openrouter'] as const,'openrouter'),model:readConfiguredValue(env,'AI_IMAGE_MODEL')||OPENROUTER_IMAGE_MODEL},
-    speech:{provider:speechProvider,model:readConfiguredValue(env,'AI_TTS_MODEL')||(speechProvider==='qwen-audio'?'qwen-audio-3.1-tts-flash':'google/gemini-3.1-flash-tts-preview')},
-    embedding:{provider:enumValue(env,'AI_EMBEDDING_PROVIDER',['dashscope'] as const,'dashscope')},
+    visionSafety:{provider:enumValue(env,'AI_VISION_PROVIDER',['deepseek'] as const,'deepseek'),model:modelValue(env,'AI_VISION_MODEL',DEEPSEEK_VISION_MODEL)},
+    image:{provider:enumValue(env,'AI_IMAGE_PROVIDER',['openrouter'] as const,'openrouter'),model:modelValue(env,'AI_IMAGE_MODEL',OPENROUTER_IMAGE_MODEL)},
+    speech:{provider:speechProvider,model:modelValue(env,'AI_TTS_MODEL',speechProvider==='qwen-audio'?'qwen-audio-3.1-tts-flash':'google/gemini-3.1-flash-tts-preview')},
+    embedding:{provider:enumValue(env,'AI_EMBEDDING_PROVIDER',['dashscope'] as const,'dashscope'),model:modelValue(env,'AI_EMBEDDING_MODEL','text-embedding-v4')},
     objectStorage:{provider:enumValue(env,'OBJECT_STORAGE_PROVIDER',['local','r2'] as const,'local')},
     email:{provider:emailProvider,fromAddress:readConfiguredValue(env,'EMAIL_FROM')||'',replyTo:readConfiguredValue(env,'EMAIL_REPLY_TO')||readConfiguredValue(env,'EMAIL_FROM'),...(emailProvider==='smtp'?{smtp:{host:readConfiguredValue(env,'SMTP_HOST')||'',port:portValue(env,'SMTP_PORT',587),user:readConfiguredValue(env,'SMTP_USER')||'',password:readConfiguredValue(env,'SMTP_PASSWORD')||''}}:{})},
   };
@@ -99,7 +109,6 @@ export function getPersonalConfig(env: RuntimeEnvironment=process.env, options: 
   const providers=getProviderConfig(env); const configurationErrors: string[]=[];
   const mock=isE2EMockProviderMode(env);
   if(env.AI_TTS_PROVIDER&&!mock&&!readConfiguredValue(env,providers.speech.provider==='qwen-audio'?'DASHSCOPE_API_KEY':'OPENROUTER_API_KEY')) throw new Error(`AI_TTS_PROVIDER=${providers.speech.provider} requires ${providers.speech.provider==='qwen-audio'?'DASHSCOPE_API_KEY':'OPENROUTER_API_KEY'}`);
-  if(env.AI_TTS_MODEL&&providers.speech.model!==(providers.speech.provider==='qwen-audio'?'qwen-audio-3.1-tts-flash':'google/gemini-3.1-flash-tts-preview')) throw new Error(`AI_TTS_MODEL is not supported by ${providers.speech.provider}`);
   const mode=enumValue(env,'MEMORY_RETRIEVAL_MODE',['auto','keyword','hybrid'] as const,'auto');
   const embeddingConfigured=!!readConfiguredValue(env,'DASHSCOPE_API_KEY')||(mock&&mode==='hybrid');
   if(mode==='hybrid'&&!embeddingConfigured) throw new Error('MEMORY_RETRIEVAL_MODE=hybrid requires DASHSCOPE_API_KEY');

@@ -1,6 +1,7 @@
 /** Personal memory wiring: SQLite owns persistence; no Mem0/Supabase configuration. */
 import { getPersonalConfig, getProviderConfig, type RuntimeEnvironment } from '@/lib/config/runtime';
 import { getEmbeddingProvider } from '@/lib/ai/embedding-provider';
+import { EMBEDDING_DIMENSIONS } from '@/lib/ai/providers/dashscope-embedding-provider';
 import { getSqlite } from '@/storage/database/db';
 import { createProviderMemoryOrganizer } from './organizer';
 import { createMemoryService } from './service';
@@ -11,11 +12,13 @@ export type MemoryBackend = 'local';
 export function resolveMemoryBackend(env?: RuntimeEnvironment): MemoryBackend { void env; return 'local'; }
 export function isMemoryEnabled(env?: RuntimeEnvironment): boolean { void env; return true; }
 export function isLongTermMemoryEnabled(): boolean { return true; }
-export function getMemoryDependencies() {
-  const config = getPersonalConfig(process.env, { strict: false });
-  return { appId: PERSONAL_MEMORY_APP_ID, gateway: createSqliteMemoryGateway(getSqlite(), {
+export function getMemoryDependencies(env: RuntimeEnvironment = process.env, db: ReturnType<typeof getSqlite> = getSqlite()) {
+  const config = getPersonalConfig(env, { strict: false });
+  return { appId: PERSONAL_MEMORY_APP_ID, gateway: createSqliteMemoryGateway(db, {
     retrievalMode: config.memoryRetrievalMode,
-    embed: config.memoryRetrievalMode === 'hybrid' ? (request) => getEmbeddingProvider().embed(request) : undefined,
+    embeddingModel: config.providers.embedding.model,
+    embeddingDimensions: EMBEDDING_DIMENSIONS,
+    embed: config.memoryRetrievalMode === 'hybrid' ? (request) => getEmbeddingProvider(env).embed(request) : undefined,
   }) };
 }
 /** The supervised worker uses the same resolved mode and provider namespace as chat. */
@@ -24,6 +27,8 @@ export function getMemoryWorkerOptions(env: RuntimeEnvironment = process.env) {
   return {
     appId: PERSONAL_MEMORY_APP_ID,
     retrievalMode: config.memoryRetrievalMode,
+    embeddingModel: config.providers.embedding.model,
+    embeddingDimensions: EMBEDDING_DIMENSIONS,
     organizer: createProviderMemoryOrganizer(),
     organizerModel: getProviderConfig(env).chat.model,
     embed: config.memoryRetrievalMode === 'hybrid'

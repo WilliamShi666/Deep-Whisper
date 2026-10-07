@@ -12,6 +12,7 @@ import {
 } from '@/lib/ai/contracts';
 
 import { DEEPSEEK_VISION_MODEL } from '../model-defaults';
+import { readModelId } from '@/lib/config/runtime';
 export { DEEPSEEK_VISION_MODEL } from '../model-defaults';
 
 // DeepSeek 官方会静默改名：旧名仍可请求，但响应里的 model 会被规范化成新名。
@@ -207,11 +208,7 @@ export class DeepSeekChatProvider implements ChatProvider {
   private readonly retryDelayMs: number;
 
   constructor(private readonly options: DeepSeekChatProviderOptions) {
-    if (!isSupportedModel(options.model)) {
-      throw new Error(
-        `DeepSeek model must be ${DEEPSEEK_VISION_MODEL}`,
-      );
-    }
+    readModelId(options.model, 'AI_CHAT_MODEL / AI_VISION_MODEL');
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.env = options.env ?? process.env;
     this.baseUrl = normalizeBaseUrl(
@@ -223,7 +220,7 @@ export class DeepSeekChatProvider implements ChatProvider {
   private assertResponseModel(model: string | undefined): void {
     if (!model) return;
     // 新旧名都在支持集合内即视为正常（供应商会把别名规范化成正式名）。
-    if (isSupportedModel(model)) return;
+    if (model === this.options.model || (isSupportedModel(this.options.model) && isSupportedModel(model))) return;
     throw new Error('DeepSeek returned an unexpected model');
   }
 

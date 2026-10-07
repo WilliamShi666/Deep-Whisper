@@ -93,20 +93,41 @@ function persistRelationship(db: Database.Database, input: OrganizerJobInput, up
   const fields = normalizeSnapshotUpdate(update);
   if (fields) persistSqliteRelationshipSnapshot(db, { ...input, fields });
 }
+function embeddingTarget(payload: string) {
+  const value = JSON.parse(payload) as { embeddingModel?: string; embeddingDimensions?: number } | null;
+  // Historical jobs used the fixed v4/1024 space and an empty object payload.
+  return { embeddingModel: value?.embeddingModel ?? 'text-embedding-v4', embeddingDimensions: value?.embeddingDimensions ?? 1024 };
+}
+function selectedEmbeddingTarget(options: SqliteMemoryOptions) {
+  return { embeddingModel: options.embeddingModel ?? 'text-embedding-v4', embeddingDimensions: options.embeddingDimensions ?? 1024 };
+}
 /** Bounded catch-up when a formerly keyword-only personal instance enables hybrid. */
 export function enqueueMissingEmbeddingJobs(db: Database.Database, at: Date, options: SqliteMemoryOptions): number {
-  const model = options.embeddingModel ?? 'text-embedding-v4';
-  const dimensions = options.embeddingDimensions ?? 1024;
+  const { embeddingModel: model, embeddingDimensions: dimensions } = selectedEmbeddingTarget(options);
+  const payload = JSON.stringify({ embeddingModel: model, embeddingDimensions: dimensions });
   return db.transaction(() => {
     const rows = db.prepare(`SELECT m.id,m.visitor_id,m.companion_id,m.content_version FROM memories m
+      LEFT JOIN memory_jobs j ON j.kind='embedding' AND j.memory_id=m.id AND j.content_version=m.content_version
       WHERE m.status='active' AND (m.valid_until IS NULL OR m.valid_until>?)
       AND (m.embedding IS NULL OR m.embedding_content_version IS NULL OR m.embedding_content_version<>m.content_version
         OR m.embedding_model IS NULL OR m.embedding_model<>? OR m.embedding_dimensions IS NULL OR m.embedding_dimensions<>?)
-      AND NOT EXISTS(SELECT 1 FROM memory_jobs j WHERE j.kind='embedding' AND j.memory_id=m.id AND j.content_version=m.content_version)
-      ORDER BY m.created_at,m.id LIMIT 50`).all(at.getTime(),model,dimensions) as
+      AND (j.id IS NULL OR (
+        NOT (j.state='running' AND COALESCE(j.lease_expires_at,0)>?)
+        AND (j.state IN ('completed','cancelled')
+          OR COALESCE(json_extract(j.payload,'$.embeddingModel'),'text-embedding-v4')<>?
+          OR COALESCE(json_extract(j.payload,'$.embeddingDimensions'),1024)<>?)))
+      ORDER BY m.created_at,m.id LIMIT 50`).all(at.getTime(),model,dimensions,at.getTime(),model,dimensions) as
       Array<{ id: string; visitor_id: string; companion_id: string; content_version: number }>;
-    for (const row of rows) enqueueSqliteMemoryEmbedding(db, { id: row.id, visitorId: row.visitor_id,
-      companionId: row.companion_id, version: row.content_version }, at.getTime());
+    for (const row of rows) {
+      const scope = { visitorId: row.visitor_id, companionId: row.companion_id };
+      enqueueSqliteMemoryEmbedding(db, { id: row.id, ...scope, version: row.content_version }, at.getTime());
+      // Reuse the content-version unique row. A model switch starts a new bounded
+      // retry budget, while same-model queued/failed jobs were excluded above.
+      db.prepare(`UPDATE memory_jobs SET payload=?,state='queued',attempt_count=0,next_attempt_at=?,lease_token=NULL,
+        lease_expires_at=NULL,last_error=NULL,scope_revision=?,updated_at=?
+        WHERE kind='embedding' AND memory_id=? AND content_version=? AND visitor_id=? AND companion_id=?`)
+        .run(payload, at.getTime(), memoryScopeRevision(db, scope), at.getTime(), row.id, row.content_version, row.visitor_id, row.companion_id);
+    }
     return rows.length;
   }).immediate();
 }
@@ -138,12 +159,21 @@ export async function processMemoryJobs(db: Database.Database, options: Omit<Sql
             .run(now().getTime(), job.id, job.lease_token);
           outcome.cancelled++; continue;
         }
+        const target = selectedEmbeddingTarget(options);
+        db.transaction(() => {
+          assertClaim(db, job, now().getTime());
+          const previous = embeddingTarget(job.payload);
+          if (previous.embeddingModel !== target.embeddingModel || previous.embeddingDimensions !== target.embeddingDimensions) job.attempt_count = 1;
+          job.payload = JSON.stringify(target);
+          db.prepare("UPDATE memory_jobs SET payload=?,attempt_count=? WHERE id=? AND state='running' AND lease_token=?")
+            .run(job.payload, job.attempt_count, job.id, job.lease_token);
+        }).immediate();
         const [vector] = await options.embed!({ texts: [row.content] });
         if (!vector) throw new Error('Embedding returned no vector');
         db.transaction(() => {
           assertClaim(db, job, now().getTime());
           if (!setSqliteMemoryEmbedding(db, { id: job.memory_id!, contentVersion: job.content_version!, vector,
-            model: options.embeddingModel ?? 'text-embedding-v4', dimensions: options.embeddingDimensions ?? 1024 })) throw new JobStateChanged('Memory content changed');
+            model: target.embeddingModel, dimensions: target.embeddingDimensions })) throw new JobStateChanged('Memory content changed');
           complete(db, job, now().getTime());
         }).immediate();
       } else {

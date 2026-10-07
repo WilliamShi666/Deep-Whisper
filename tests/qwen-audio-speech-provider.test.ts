@@ -234,12 +234,12 @@ test('Qwen TTS surfaces only a safe upstream error code', async () => {
   );
 });
 
-test('Qwen TTS rejects model drift, empty text and oversized text before any request', async () => {
+test('Qwen TTS rejects malformed model IDs, empty text and oversized text before any request', async () => {
   const drift = new QwenAudioSpeechProvider(
-    { ...BASE_ENV, AI_TTS_MODEL: 'qwen-audio-3.0-tts-flash' },
+    { ...BASE_ENV, AI_TTS_MODEL: 'invalid model' },
     asFetch(async () => { throw new Error('must not be called'); }),
   );
-  await assert.rejects(drift.synthesize({ text: '你好', voice: 'longhan_v3.1' }), /qwen-audio-3\.1-tts-flash/);
+  await assert.rejects(drift.synthesize({ text: '你好', voice: 'longhan_v3.1' }), /AI_TTS_MODEL/);
 
   const noKey = new QwenAudioSpeechProvider(
     { AI_TTS_PROVIDER: 'qwen-audio', DASHSCOPE_TTS_BASE_URL: ENDPOINT },

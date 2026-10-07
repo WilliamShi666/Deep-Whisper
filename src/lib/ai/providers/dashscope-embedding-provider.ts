@@ -1,4 +1,5 @@
 import type { EmbeddingProvider, EmbeddingRequest, RuntimeEnvironment } from '@/lib/ai/embedding-contracts';
+import { getProviderConfig } from '@/lib/config/runtime';
 
 /** Personal hybrid retrieval adapter. Requests at most 10 inputs per provider call.
  * Model and dimension are persisted with every vector; incompatible spaces never mix.
@@ -64,16 +65,17 @@ export class DashScopeEmbeddingProvider implements EmbeddingProvider {
       throw new Error(`Embedding batch is too large (max ${MAX_TEXTS_PER_CALL})`);
     }
     // 白名单/配置校验排在取 key 之前：缺 key 也要先确认「这不是一次白付的调用」。
+    const model = getProviderConfig(this.env).embedding.model;
     const apiKey = requireApiKey(this.env);
     const result: number[][] = [];
     for (let offset = 0; offset < texts.length; offset += MAX_TEXTS_PER_REQUEST) {
       const batch = texts.slice(offset, offset + MAX_TEXTS_PER_REQUEST);
-      result.push(...await this.embedBatch(batch, request.signal, apiKey));
+      result.push(...await this.embedBatch(batch, request.signal, apiKey, model));
     }
     return result;
   }
 
-  private async embedBatch(texts: string[], signal: AbortSignal | undefined, apiKey: string): Promise<number[][]> {
+  private async embedBatch(texts: string[], signal: AbortSignal | undefined, apiKey: string, model: string): Promise<number[][]> {
     for (let attempt = 1; ; attempt += 1) {
       // 契约要求：既传调用方的 signal，**又**保留一个有限超时。
       // 写成 `request.signal ?? AbortSignal.timeout(...)` 是错的 —— 调用方一旦传了 signal，
@@ -83,7 +85,7 @@ export class DashScopeEmbeddingProvider implements EmbeddingProvider {
         method: 'POST',
         headers: { 'content-type': 'application/json', Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: EMBEDDING_MODEL,
+          model,
           input: texts,
           dimensions: EMBEDDING_DIMENSIONS,
           encoding_format: 'float',

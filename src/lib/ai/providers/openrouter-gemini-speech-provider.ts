@@ -159,9 +159,6 @@ export class OpenRouterGeminiSpeechProvider implements SpeechProvider {
     if (text.length > MAX_TEXT_LENGTH) throw new Error('Speech synthesis text is too long');
 
     const model = getSpeechModelFor('openrouter-gemini', this.env) || OPENROUTER_GEMINI_TTS_MODEL;
-    if (model !== OPENROUTER_GEMINI_TTS_MODEL) {
-      throw new Error(`OpenRouter Gemini TTS model must be ${OPENROUTER_GEMINI_TTS_MODEL}`);
-    }
     const publicVoice = toPublicVoiceId(input.voice);
     const voice = GEMINI_VOICE_BY_PROJECT_VOICE[input.voice]
       ?? (publicVoice ? geminiFallbackVoiceFor(publicVoice) : undefined);

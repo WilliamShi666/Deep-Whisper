@@ -25,7 +25,7 @@ AiMessage.role 为 system/user/assistant，content 为文本或 text/image_url p
 
 APP_ENV 优先于 NODE_ENV，不使用 VERCEL_ENV 推导个人配置。默认 HOST=127.0.0.1、PORT=5000、APP_BASE_URL 为同端口回环 origin、APP_DATA_DIR=./data。local 模式要求回环；远程 password 模式要求至少12字符 OWNER_PASSWORD 和公开 HTTPS origin。
 
-Qwen 模型为 qwen-audio-3.1-tts-flash，Gemini 为 google/gemini-3.1-flash-tts-preview；AI_TTS_MODEL 必须匹配。MaaS 默认 TTS endpoint=https://maas.qianwenaiapi.com/api/v1，embedding=https://maas.qianwenaiapi.com/compatible-mode/v1。更换平台时 key 与两条 endpoint 配套，不假定不同平台 key 互通。SQLite 向量验证实际模型、维度、内容版本，不混用向量空间。
+Qwen 默认模型为 qwen-audio-3.1-tts-flash，Gemini 默认为 google/gemini-3.1-flash-tts-preview；AI_TTS_MODEL 可选择当前语音provider的兼容HTTP合成模型，保留音色/音频/临时URL安全校验，Qwen的Gemini失败回退仍用默认Gemini模型。AI_CHAT_MODEL、AI_VISION_MODEL、AI_IMAGE_MODEL、AI_EMBEDDING_MODEL 同样允许选择现有提供商的兼容模型；上传审核默认独立于聊天模型。MaaS 默认 TTS endpoint=https://maas.qianwenaiapi.com/api/v1，embedding=https://maas.qianwenaiapi.com/compatible-mode/v1。更换平台时 key 与两条 endpoint 配套，不假定不同平台 key 互通。SQLite 向量验证实际模型、维度、内容版本，不混用向量空间。
 
 E2E_MOCK_PROVIDERS=1 仅允许 APP_ENV=test 且所有真实凭据为空。mock hybrid 使用假向量无需真实 key，mock auto 无 key 仍为 keyword。测试使用独立临时 APP_DATA_DIR。
 
@@ -33,7 +33,7 @@ E2E_MOCK_PROVIDERS=1 仅允许 APP_ENV=test 且所有真实凭据为空。mock h
 
 聊天与审核显式关闭 thinking；后台整理器显式开启 thinking+reasoningEffort=low，不发送无效 temperature。SSE 保留 user_message/chunk/done/error、PHOTO holdback 和断开后的有界保存。只有含非空用户文本的回复原子保存 organizer job；开场白与纯图片回复不伪造文本来源。
 
-图片参数按模型构造：GPT Image 2 使用 quality/aspect_ratio，不发送 Gemini resolution；Gemini 使用1K resolution、n=1。参考图固定活动伴侣身份/比例 PNG，stale appearance 返回409。服装保持参考图，只有明确场景才改变；内容边界由 prompt/审核实施。
+图片参数按模型构造：GPT Image 2 使用 quality/aspect_ratio，不发送 Gemini resolution；内置Gemini 使用1K resolution、n=1；其他图像ID使用公共参数与上游默认画质，不盲发quality/resolution。参考图固定活动伴侣身份/比例 PNG，stale appearance 返回409。服装保持参考图，只有明确场景才改变；内容边界由 prompt/审核实施。
 
 VOICE_OPTIONS 共25个公开代号，按性别过滤，中文在前。客户端不得导入上游目录/映射或回显原始 slug。Qwen 发送服务端映射的音色；临时 OSS URL 仅允许配置的 host suffix，立即下载 bytes。Qwen 失败且 OpenRouter 已配置时回退同性别 Gemini 兼容音色。Gemini-only 不产生25种独立声线，设置页需说明兼容模式。PCM 在 adapter 内封装 WAV。
 

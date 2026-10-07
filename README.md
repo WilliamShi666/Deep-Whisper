@@ -1,5 +1,7 @@
 # Deep Whisper · 个人开源版
 
+简体中文 | [English](README.en.md)
+
 Deep Whisper 是一款 AI 伴侣聊天产品：选择喜欢的角色，定制名字、性格和称呼，与 TA 聊天、听语音、收照片，让共同的经历成为长期记忆。
 
 这是 Deep Whisper 的**个人自托管开源版本**。您可以在自己的电脑上运行，聊天记录、记忆、图片和音频保存在自己的数据目录。一个安装实例对应一位主人，可以保留多个伴侣和会话。
@@ -97,7 +99,7 @@ DASHSCOPE_API_KEY=your-qianwen-api-key
 
 **语音怎么选？** 填了千问 key 就优先使用千问 `qwen-audio-3.1-tts-flash`；同时填了 OpenRouter key 时，千问调用失败会回退 Gemini，回退时声音会变化。只填 OpenRouter 时使用 Gemini，均未填写时仍可文字聊天。
 
-**长期记忆是否必须用向量？** 不必。模板中的 `MEMORY_RETRIEVAL_MODE=auto` 会在没有千问 key 时使用 SQLite FTS5/BM25 关键词检索，有千问 key 时启用混合检索。向量模型固定为 `text-embedding-v4`，维度为 1024；应用后台负责保存和补建向量，无需安装向量数据库。
+**长期记忆是否必须用向量？** 不必。模板中的 `MEMORY_RETRIEVAL_MODE=auto` 会在没有千问 key 时使用 SQLite FTS5/BM25 关键词检索，有千问 key 时启用混合检索。向量模型默认为 `text-embedding-v4`，维度为 1024；应用后台负责保存和补建向量，无需安装向量数据库。
 
 如果想使用千问语音，但暂时不开向量检索，可以改为：
 
@@ -116,6 +118,39 @@ DASHSCOPE_EMBEDDING_BASE_URL=https://maas.qianwenaiapi.com/compatible-mode/v1
 ```
 
 这些地址对应千问 AI 平台的 key。阿里云百炼的账户、地区和 key 不自动等同于这个配置；使用其他平台配置时，需要填写它对应的端点并确认模型权限。不要只换网址而继续使用不匹配的 key。
+
+### 可选：不换提供商，只切换模型
+
+在 `.env.local` 中添加或修改下面的模型 ID，保存后重启应用。不填时继续使用默认模型，不需要为切换模型另换 API key、提供商或地址；但账户必须有该模型的调用权限。
+
+| 变量 | 默认值 | 用途 |
+|---|---|---|
+| `AI_CHAT_MODEL` | `deepseek-flash` | DeepSeek 对话、人格完善、记忆整理及来信 |
+| `AI_VISION_MODEL` | `deepseek-flash`，独立于聊天模型 | DeepSeek 上传图片安全审核 |
+| `AI_IMAGE_MODEL` | `openai/gpt-image-2` | OpenRouter 生图 |
+| `AI_TTS_MODEL` | 千问：`qwen-audio-3.1-tts-flash`；Gemini：`google/gemini-3.1-flash-tts-preview` | 当前语音提供商的主模型 |
+| `AI_EMBEDDING_MODEL` | `text-embedding-v4` | 千问/DashScope 混合记忆检索 |
+
+例如，使用千问语音时，可以明确填写默认模型：
+
+```dotenv
+AI_CHAT_MODEL=deepseek-flash
+AI_VISION_MODEL=deepseek-flash
+AI_IMAGE_MODEL=openai/gpt-image-2
+AI_TTS_MODEL=qwen-audio-3.1-tts-flash
+AI_EMBEDDING_MODEL=text-embedding-v4
+```
+
+想切换某一项，就把它的值替换为供应商提供的完整模型 ID。只用 OpenRouter 语音时，`AI_TTS_MODEL` 要填兼容的 Gemini 语音模型，不能照抄千问值。千问失败时的 Gemini 后备仍使用默认 Gemini 模型。OpenRouter ID 通常带 `openai/` 或 `google/` 等前缀。
+
+模型需要兼容当前接口：
+
+- **对话**：支持流式 Chat Completions、JSON 输出和项目使用的 thinking 设置；图片聊天还要求聊天模型支持图片。上传审核独立使用 `AI_VISION_MODEL`，该模型必须支持图片和结构化审核。
+- **生图**：支持 OpenRouter `/images` 的参考图输入，返回 PNG/JPEG/WebP 字节。两个内置模型保留各自的 `quality` 或 `resolution` 参数；其他模型使用公共参数和上游默认画质。可用 ID 与能力可在 [OpenRouter 图片 API 文档](https://openrouter.ai/docs/guides/overview/multimodal/image-generation)查看。
+- **语音**：千问模型须兼容现有合成接口、允许的音频下载主机及项目音色；Gemini 模型须兼容 OpenRouter `/audio/speech`、现有音色和音频格式。音色与模型是两个配置，切换模型不会新增音色目录。
+- **Embedding**：须支持当前 `/embeddings` 接口、`dimensions=1024` 和浮点输出。切换后，后台会为已有记忆补建新模型的向量；不删除记忆正文，关键词检索继续可用，旧模型向量不会和新模型向量混用。补建会产生供应商用量。
+
+`doctor` 只检查本地配置，不查询云端模型目录或验证账户权限。若模型不兼容或未开通，恢复原模型值并重启。**已有消息的语音缓存保持不变**；切换语音模型后请用新消息测试；若同时更换了音色，可使用“用新音色重新生成”入口。详细配置见 [环境变量指南](docs/opensource/04-environment.md)。
 
 ### 其他配置：初次使用保持默认即可
 

@@ -66,17 +66,16 @@ test('legacy OpenRouter LLM model environment cannot change the DeepSeek model',
   );
 });
 
-test('DeepSeek registry rejects a non-Vision model instead of falling back', async () => {
+test('DeepSeek registry accepts a configured model while keeping upload moderation independent', async () => {
   await withProviderEnv(
     {
       AI_CHAT_PROVIDER: 'deepseek',
       AI_CHAT_MODEL: 'deepseek-v4-flash',
     },
     () => {
-      assert.throws(
-        () => getChatProvider(),
-        /must be deepseek-flash/,
-      );
+      assert(getChatProvider() instanceof DeepSeekChatProvider);
+      assert.equal(getProviderConfig().chat.model, 'deepseek-v4-flash');
+      assert.equal(getProviderConfig().visionSafety.model, DEEPSEEK_VISION_MODEL);
     },
   );
 });

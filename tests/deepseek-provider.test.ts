@@ -292,15 +292,15 @@ test('DeepSeek retries 429 but never retries 401', async () => {
   assert.equal(unauthorizedAttempts, 1);
 });
 
-test('DeepSeek rejects any model outside the supported model set', () => {
+test('DeepSeek rejects malformed model IDs before a request', () => {
   assert.throws(
     () =>
       new DeepSeekChatProvider({
-        model: 'deepseek-v4-flash',
+        model: 'invalid model',
         fetchImpl: asFetch(async () => new Response()),
         env: { DEEPSEEK_API_KEY: 'contract-test-key' },
       }),
-    /must be deepseek-flash/,
+    /model ID/,
   );
 });
 

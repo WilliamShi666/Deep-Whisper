@@ -160,15 +160,15 @@ test('OpenRouter Image rejects empty output, unsupported MIME, and oversized byt
   });
 });
 
-test('OpenRouter Image rejects model, resolution, and aspect-ratio drift', async () => {
+test('OpenRouter Image rejects malformed model IDs, resolution, and aspect-ratio drift', async () => {
   assert.throws(
     () =>
       new OpenRouterImageProvider({
-        model: 'google/gemini-3.1-flash-image',
+        model: 'invalid model',
         fetchImpl: asFetch(async () => new Response()),
         env: { OPENROUTER_API_KEY: 'contract-test-key' },
       }),
-    /must be one of: google\/gemini-3\.1-flash-lite-image, openai\/gpt-image-2/,
+    /AI_IMAGE_MODEL/,
   );
 
   // Gemini 只支持 1K：给它别的档位必须本地就拒绝，不发请求。

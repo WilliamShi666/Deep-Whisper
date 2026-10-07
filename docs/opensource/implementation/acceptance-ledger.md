@@ -1,6 +1,6 @@
 # Personal edition acceptance ledger
 
-2026-10-07. Plan approved; implementation uses an isolated managed worktree, synthetic SQLite databases and private media. MIT code license approved. Original production project and remote databases were not changed. Public asset distribution remains a separate owner decision.
+2026-10-07. Plan approved; implementation uses an isolated managed worktree, synthetic SQLite databases and private media. MIT code license approved. Original production project and remote databases were not changed. Owner approved the artwork, wallpapers and branding distribution for personal self-hosting on 2026-10-07; see ASSETS.md. Historical implementation reports below predate publication; current follow-up evidence is recorded at the end.
 
 This ledger separates implementation evidence from final acceptance. Independent code/spec reviews preceded the fresh dedicated E2E run; review findings were repaired and independently rechecked. Offline tests do not establish real provider output, voice quality or mailbox delivery. macOS host checks do not establish native Windows/Linux installation.
 
@@ -44,6 +44,10 @@ This ledger separates implementation evidence from final acceptance. Independent
 | 036 | maintenance drain + writer/media lock + SQLite backup API, hashes/validated restore | tools/WAL/media/secret/tamper tests, old-version migration backup, process locks excluded; in-flight production backup drain, maintenance503, persisted assistant and validated restore passed; disk-full OS injection not yet run |
 | 037 | MIT + separate asset statement, allowlist export without .git/env/data, license inventory | personal-export + dependency inventory/audit; manual publication checklist and asset rights still required; no public push |
 | 038 | this numbered ledger; fresh independent reviews followed by separate E2E agent | independent code/spec reports and 24 distinct dedicated E2E cases recorded, no author self-review counted; final test teardown repair separately rechecked |
+| 039 | optional five model IDs resolved by shared runtime; independent upload moderation default | personal-model-selection config/default/invalid-ID tests |
+| 040 | selected models reach unchanged provider HTTP contracts and media validation | personal-model-selection Chat/SSE/reference image/Qwen/Gemini transport tests; existing provider regressions |
+| 041 | selected embedding namespace in query and worker; bounded async rebuild retains facts/FTS | personal-embedding-model real SQLite tests: A→B→A, same-dimension isolation, completed jobs, retry budget, leases, batch bound |
+| 042 | bilingual novice README, optional model templates, public English guide export | independent spec/doc review; personal-export real temporary-file English guide case |
 
 ## TDD evidence
 
@@ -62,3 +66,11 @@ Final test-facility repair: the independent controlled subprocess probe captured
 Final author check logs: `final-unit-green.log`, `final-build-green.log`, `final-lint-green.log`, `final-types-green.log` and `final-test-facility-lint-green.log`. Production business source passed the build before the final test-only teardown helper; that subsequent helper and callers passed TypeScript/ESLint and the full unit suite. The final freshly exported 696-file package completed its own frozen offline install and full production build; see `clean-candidate-checks.md`.
 
 Delivery consolidation: source files were scoped-synchronized into the user checkout, with original environment files and three unrelated dirty documents preserved. Original old Next.js cache was reversibly archived under ignored `.local/legacy-next-before-personal-20261007`; original source files were backed up under `.local/personal-sync-backup-20261007`. Actual source hashes matched the copied files and the user checkout TypeScript check passed after its own locked dependency installation. GitNexus was refreshed under `DeepWhisperOpenSource`. No commit, push, remote database operation or publication occurred.
+
+## Model configuration follow-up (2026-10-07)
+
+Initial public release: d241756 in WilliamShi666/Deep-Whisper, with a clean root Git history and owner-approved static assets; real credentials, runtime media and user data were excluded. This follow-up adds compatible model ID overrides for chat, upload moderation, images, speech and embeddings, plus README.en.md. The provider services and successful frontend API/SSE shapes remain unchanged.
+
+TDD: personal-model-selection captured six behavioral failures before the runtime/adapter changes, then six passes. personal-embedding-model captured six failures before implementing configured embedding transport, matching query/worker namespaces and model-switch job rebuilding, then six passes. Real SQLite fixtures cover A→B→A, retained facts/FTS, old-space exclusion, bounded catch-up, preserved retry budgets and stale lease fencing. Existing fixed-model rejection tests were updated to the new configurable model contract; malformed IDs, provider enums, response drift and media boundary tests remain.
+
+Final full unit suite: **1060/1060**, zero failures/skips. TypeScript passed; lint has zero errors and 25 existing warnings. Independent code and spec/documentation reviews passed. This follow-up does not add browser E2E, paid model requests or real email delivery checks; it tests provider request/response contracts with network fakes and memory behavior with real temporary SQLite. Cloud model availability and permissions remain the user's provider-account configuration.

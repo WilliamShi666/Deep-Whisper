@@ -61,17 +61,15 @@ test('the Gemini image model stays selectable as a rollback path', async () => {
   );
 });
 
-test('image registry rejects an unknown image model', async () => {
+test('image registry accepts another configured OpenRouter image model', async () => {
   await withImageEnv(
     {
       AI_IMAGE_PROVIDER: 'openrouter',
       AI_IMAGE_MODEL: 'openai/gpt-image-1',
     },
     () => {
-      assert.throws(
-        () => getImageProvider(),
-        /must be one of: google\/gemini-3\.1-flash-lite-image, openai\/gpt-image-2/,
-      );
+      assert(getImageProvider() instanceof OpenRouterImageProvider);
+      assert.equal(getProviderConfig().image.model, 'openai/gpt-image-1');
     },
   );
 });
