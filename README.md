@@ -8,7 +8,7 @@ Deep Whisper 是一款 AI 伴侣聊天产品：选择喜欢的角色，定制名
 
 想先看看产品？访问 **[Deep Whisper 线上版本](https://www.deepwhisperai.com)**。
 
-本版使用 Next.js、React、TypeScript 和 SQLite。AI 能力通过您自己的云服务 API key 调用；聊天和生成内容仍需要网络。本地使用无需注册项目账号、配置 Supabase 或安装 PostgreSQL，也没有项目会员购买流程。
+本版使用 Next.js、React、TypeScript 和 SQLite。AI 能力通过您配置的 API 服务调用，可使用云服务或本地 OpenAI 兼容服务；云端聊天和生成内容需要网络。本地使用无需注册项目账号、配置 Supabase 或安装 PostgreSQL，也没有项目会员购买流程。
 
 ## 能玩什么
 
@@ -69,7 +69,7 @@ pnpm run setup
 
 ### 最小配置：先把聊天跑起来
 
-只必须填写一项：
+沿用默认 DeepSeek 服务时，只必须填写一项；如果使用其他服务，请看下方“自定义 API 地址”：
 
 ```dotenv
 DEEPSEEK_API_KEY=your-deepseek-api-key
@@ -83,7 +83,7 @@ DEEPSEEK_API_KEY=your-deepseek-api-key
 
 | 环境变量 | 是否必须 | 能开启什么 | 从哪里获取 |
 |---|---|---|---|
-| `DEEPSEEK_API_KEY` | **必须** | 聊天、图片理解、安全审核、记忆整理 | [DeepSeek API keys](https://platform.deepseek.com/api_keys) |
+| `DEEPSEEK_API_KEY` | **默认聊天服务必填** | 聊天、图片理解、安全审核、记忆整理 | [DeepSeek API keys](https://platform.deepseek.com/api_keys) |
 | `OPENROUTER_API_KEY` | 可选 | 生成伴侣照片、Gemini 语音 | [OpenRouter API keys](https://openrouter.ai/settings/keys) |
 | `DASHSCOPE_API_KEY` | 可选 | 千问语音、向量检索 | [千问 AI 平台 API key 指南](https://platform.qianwenai.com/docs/api-reference/preparation/api-key) |
 
@@ -145,12 +145,68 @@ AI_EMBEDDING_MODEL=text-embedding-v4
 
 模型需要兼容当前接口：
 
-- **对话**：支持流式 Chat Completions、JSON 输出和项目使用的 thinking 设置；图片聊天还要求聊天模型支持图片。上传审核独立使用 `AI_VISION_MODEL`，该模型必须支持图片和结构化审核。
+- **对话**：支持流式 Chat Completions、JSON 输出和 DeepSeek 原生适配器使用的 thinking 设置；图片聊天还要求聊天模型支持图片。上传审核独立使用 `AI_VISION_MODEL`，该模型必须支持图片和结构化审核。
 - **生图**：支持 OpenRouter `/images` 的参考图输入，返回 PNG/JPEG/WebP 字节。两个内置模型保留各自的 `quality` 或 `resolution` 参数；其他模型使用公共参数和上游默认画质。可用 ID 与能力可在 [OpenRouter 图片 API 文档](https://openrouter.ai/docs/guides/overview/multimodal/image-generation)查看。
 - **语音**：千问模型须兼容现有合成接口、允许的音频下载主机及项目音色；Gemini 模型须兼容 OpenRouter `/audio/speech`、现有音色和音频格式。音色与模型是两个配置，切换模型不会新增音色目录。
-- **Embedding**：须支持当前 `/embeddings` 接口、`dimensions=1024` 和浮点输出。切换后，后台会为已有记忆补建新模型的向量；不删除记忆正文，关键词检索继续可用，旧模型向量不会和新模型向量混用。补建会产生供应商用量。
+- **Embedding**：须支持当前 `/embeddings` 接口和浮点输出，默认请求 `dimensions=1024`；其他维度及固定维度接口的配置见下节。切换后，后台会为已有记忆补建新模型的向量；不删除记忆正文，关键词检索继续可用，旧模型向量不会和新模型向量混用。补建会产生供应商用量。
 
 `doctor` 只检查本地配置，不查询云端模型目录或验证账户权限。若模型不兼容或未开通，恢复原模型值并重启。**已有消息的语音缓存保持不变**；切换语音模型后请用新消息测试；若同时更换了音色，可使用“用新音色重新生成”入口。详细配置见 [环境变量指南](docs/opensource/04-environment.md)。
+
+### 可选：自定义 API 地址，使用其他服务或本地模型
+
+可以给对话、生图、语音和 Embedding 分别选择 **OpenAI 兼容接口**。不要求四项来自同一服务，也不再必须填写 DeepSeek key。先确认服务支持下表的接口；更换 URL 不会把厂商自己的原生协议转换成兼容协议。
+
+| 能力 | 协议选择 | API 根地址 | 密钥 | 模型 |
+|---|---|---|---|---|
+| 对话 | `AI_CHAT_PROVIDER=openai-compatible` | `AI_CHAT_BASE_URL` | `AI_CHAT_API_KEY` | `AI_CHAT_MODEL` |
+| 生图 | `AI_IMAGE_PROVIDER=openai-compatible` | `AI_IMAGE_BASE_URL` | `AI_IMAGE_API_KEY` | `AI_IMAGE_MODEL` |
+| 语音 | `AI_TTS_PROVIDER=openai-compatible` | `AI_TTS_BASE_URL` | `AI_TTS_API_KEY` | `AI_TTS_MODEL` |
+| Embedding | `AI_EMBEDDING_PROVIDER=openai-compatible` | `AI_EMBEDDING_BASE_URL` | `AI_EMBEDDING_API_KEY` | `AI_EMBEDDING_MODEL` |
+
+**必填与可选：** 启用某项兼容服务时，其 `PROVIDER`、`BASE_URL`、`MODEL` 必填；需要认证的服务还须填写它的 `API_KEY`。只有不需要认证的本地／自托管服务才可以留空 key。生图、语音和 Embedding 都可不配置，先完成对话即可。兼容服务不会借用 `DEEPSEEK_API_KEY`、`OPENROUTER_API_KEY` 或 `DASHSCOPE_API_KEY`。
+
+例如，下面是一份完整的兼容配置骨架。**把示例 URL、模型和 key 替换成所用服务提供的值**；没有开通的能力请整组删去。相同服务可以重复填写同一个地址和 key，不同服务则分别填写。
+
+```dotenv
+# 对话：支持流式 Chat Completions、结构化 JSON；图片聊天还需多模态模型
+AI_CHAT_PROVIDER=openai-compatible
+AI_CHAT_BASE_URL=http://127.0.0.1:1234/v1
+AI_CHAT_MODEL=your-chat-model
+AI_CHAT_API_KEY=
+
+# 自拍：支持带参考图的 /images/edits，并同步返回 Base64 图片
+AI_IMAGE_PROVIDER=openai-compatible
+AI_IMAGE_BASE_URL=https://your-image-service.example/v1
+AI_IMAGE_MODEL=your-image-model
+AI_IMAGE_API_KEY=your-image-service-key
+
+# 朗读：支持 /audio/speech 返回 MP3/WAV 字节
+AI_TTS_PROVIDER=openai-compatible
+AI_TTS_BASE_URL=https://your-speech-service.example/v1
+AI_TTS_MODEL=your-speech-model
+AI_TTS_API_KEY=your-speech-service-key
+AI_TTS_VOICE_FEMALE=alloy
+AI_TTS_VOICE_MALE=onyx
+
+# 向量检索：支持 /embeddings 返回浮点向量
+AI_EMBEDDING_PROVIDER=openai-compatible
+AI_EMBEDDING_BASE_URL=http://127.0.0.1:1234/v1
+AI_EMBEDDING_MODEL=your-embedding-model
+AI_EMBEDDING_API_KEY=
+AI_EMBEDDING_DIMENSIONS=1024
+AI_EMBEDDING_SEND_DIMENSIONS=true
+```
+
+地址填到 **API 根路径**，例如 `https://service.example/v1`，不要填写完整的 `/chat/completions`、`/audio/speech` 等请求路径。可以带服务所需的前缀；程序会追加对应接口路径。支持 HTTP/HTTPS，不接受网址里的用户名、密码、查询参数或 `#` 片段。只填写服务地址，不要在 URL 里放 key。
+
+- **图片理解与安全审核：** 兼容模式下默认继承对话服务和模型。对话模型只支持文字时，文字聊天仍可使用；上传图片需要支持多模态和结构化审核的模型。可单独设置 `AI_VISION_PROVIDER=openai-compatible`、`AI_VISION_BASE_URL`、`AI_VISION_MODEL`、`AI_VISION_API_KEY`。兼容对话下，省略 `AI_VISION_PROVIDER` 或显式选 `openai-compatible` 都可以继承对话配置，也可以仅覆盖视觉地址、模型或 key。对话与视觉并非同时兼容时，视觉兼容服务须填写自己的地址和模型。若将视觉地址改为另一个服务，须单独填写它的 key，不会将对话 key 发给新地址。沿用 DeepSeek 原生服务时，视觉模型仍独立默认 `deepseek-flash`。
+- **自拍：** 必须支持 `/images/edits` 的参考图上传，以及同步 Base64 PNG/JPEG/WebP 输出。仅支持 `/images/generations` 的服务不能完成保留角色形象的自拍；程序不会丢弃参考图来绕过这一要求。异步任务、仅返回图片 URL 的接口暂不支持。
+- **语音：** `AI_TTS_VOICE_FEMALE` / `AI_TTS_VOICE_MALE` 默认 `alloy` / `onyx`，要改成语音服务支持的音色 ID。兼容模式按伴侣性别映射这两个音色，界面会说明该模式，并不代表服务支持千问的 25 个音色。兼容模式失败不会自动调用其他供应商。
+- **Embedding：** `AI_EMBEDDING_DIMENSIONS` 填实际输出维度，默认 `1024`，合法范围为 1–65536 的整数。不接受 `dimensions` 参数的固定维度接口，设置 `AI_EMBEDDING_SEND_DIMENSIONS=false`，同时填写正确维度，例如 `768`。返回长度不符会拒绝该向量，并保留关键词检索。
+
+改协议、API 地址、模型或向量维度后，**停止并重启应用与 worker**（使用 `pnpm dev` / `pnpm start` 时两者由同一命令启动）。向量空间变化会在后台重建记忆向量，保留事实与 FTS/BM25 索引，不混用不同服务的同名模型向量；补建会产生 API 用量。仅轮换 key 不重建向量。已有语音缓存仍可播放，不会因模型或地址变化自动重生成。
+
+已有的 `DEEPSEEK_BASE_URL`、`OPENROUTER_BASE_URL`、`DASHSCOPE_TTS_BASE_URL`、`DASHSCOPE_EMBEDDING_BASE_URL` 继续可用。原生适配器也可以用上述每项 `AI_*_BASE_URL` / `AI_*_API_KEY` 单独覆盖地址和 key，新变量优先于对应旧变量；但请求协议仍由 `AI_*_PROVIDER` 决定。远端 API 要使用 HTTPS，并填写与它匹配的凭据。
 
 ### 其他配置：初次使用保持默认即可
 
@@ -185,8 +241,8 @@ pnpm dev
 
 1. 首次进入，按引导选择性别、取向、角色和形象比例，填写伴侣名字、性格、称呼，并确认自己的时区。
 2. 进入聊天页，发一句“你好，今天想和你聊聊”，观察回复逐字出现。
-3. 填了语音 key 后，点击助手消息下方的**朗读按钮**。语音按点击生成，不会自动播放；可在伴侣设置里换音色。
-4. 填了 OpenRouter key 后，明确说“拍一张你在窗边的自拍给我”，等待照片生成并出现在聊天里。
+3. 配置了语音服务后，点击助手消息下方的**朗读按钮**。语音按点击生成，不会自动播放；可在伴侣设置里换音色。
+4. 配置了生图服务后，明确说“拍一张你在窗边的自拍给我”，等待照片生成并出现在聊天里。
 5. 试试记忆：“我喝茶不加糖，平时喜欢桂花乌龙，请记住。”等后台整理完成后，给**同一个伴侣**开启新话题，问“你记得我的喝茶习惯吗？”记忆整理异步进行，不保证发完消息后立即完成。
 6. 打开聊天装扮或伴侣设置，调整壁纸、配色、人格、音色和来信偏好。换伴侣会保留原伴侣与旧会话；记忆按伴侣隔离。
 
@@ -211,8 +267,8 @@ SMTP 参数和应用专用密码由自己的邮箱服务商提供；465 使用�
 |---|---|
 | `pnpm` 或 `node` 找不到 | 确认已安装，重新打开终端，再检查版本。 |
 | 找不到 `package.json` | 先 `cd Deep-Whisper`，ZIP 下载者进入解压后的项目目录。 |
-| `doctor` 提示缺少 `DEEPSEEK_API_KEY` | 检查是否填写在根目录 `.env.local`，文件名没有多余 `.txt`，值不是示例文字。 |
-| 语音或照片提示“未配置” | 补齐对应可选 key，保存后重启。 |
+| `doctor` 提示聊天未配置 | 默认服务检查 `DEEPSEEK_API_KEY`；兼容服务检查 `AI_CHAT_PROVIDER`、地址、模型和所需 key。确认根目录文件名为 `.env.local`，值不是示例文字。 |
+| 语音或照片提示“未配置” | 默认服务补齐对应可选 key；兼容服务补齐对应 provider、地址、模型及所需 key，保存后重启。 |
 | AI 请求超时或连接失败 | 检查运行应用的电脑／终端能否连接该供应商端点；浏览器能上网不等于 Node 请求走同一代理。查看终端错误和账户模型权限；不要把密钥贴到 issue。 |
 | 千问语音／Embedding 连不上 | 核对 key 与配对端点、终端网络。向量暂不可用时设置 `MEMORY_RETRIEVAL_MODE=keyword`；文字聊天和关键词记忆仍可使用。 |
 | `EADDRINUSE`／5000 被占用 | 停止旧实例，或把 `.env.local` 的 `PORT` 改为 `5001` 后重启，打开 `http://127.0.0.1:5001`。通常不用额外填写 `APP_BASE_URL`。 |
@@ -253,4 +309,4 @@ pnpm lint
 
 默认测试使用临时 SQLite 和模拟外部服务，不调用真实 AI 或发送真实邮件。真实供应商能力和不同操作系统需要分别验证。
 
-代码和项目文档采用 [MIT](LICENSE)。角色插画、壁纸、音色样本和品牌的授权单独说明，见 [ASSETS.md](ASSETS.md)。
+代码和项目文档采用 [MIT](LICENSE)。大肥鱼／鲸鱼娘衍生的 16 张角色插画、40 套壁纸及其横版／缩略图采用 **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)**：署名、非商业、相同方式共享，分发时保留来源与修改说明。原始形象署名上善无形，DeepSeek 元素改编署名 ZipZipPipe，本项目改编署名 WilliamShi666 / Deep Whisper。独立抱心蓝鲸品牌图片及标识另行授权。范围、署名链接与条款见 [ASSETS.md](ASSETS.md)。

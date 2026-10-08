@@ -20,7 +20,7 @@ import { readResponseJson } from '@/lib/ai/limited-response';
  * `supported_parameters`，不照抄网页上的动态能力列表。
  */
 import { OPENROUTER_GEMINI_IMAGE_MODEL, OPENROUTER_GPT_IMAGE_MODEL, OPENROUTER_IMAGE_MODEL } from '../model-defaults';
-import { readModelId } from '@/lib/config/runtime';
+import { readModelId, normalizeAiBaseUrl } from '@/lib/config/runtime';
 export { OPENROUTER_GEMINI_IMAGE_MODEL, OPENROUTER_GPT_IMAGE_MODEL, OPENROUTER_IMAGE_MODELS, OPENROUTER_IMAGE_MODEL, type OpenRouterImageModel } from '../model-defaults';
 
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
@@ -56,6 +56,8 @@ interface ProviderLogger {
 
 interface OpenRouterImageProviderOptions {
   model: string;
+  baseUrl?: string;
+  apiKey?: string;
   fetchImpl?: typeof fetch;
   env?: RuntimeEnvironment;
   logger?: ProviderLogger;
@@ -88,17 +90,8 @@ interface UpstreamErrorContext {
   logger: ProviderLogger;
 }
 
-function normalizeBaseUrl(value: string): string {
-  const normalized = value.trim().replace(/\/+$/, '');
-  const url = new URL(normalized);
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new Error('OPENROUTER_BASE_URL must use http or https');
-  }
-  return normalized;
-}
-
 function requireApiKey(env: RuntimeEnvironment): string {
-  const value = env.OPENROUTER_API_KEY?.trim();
+  const value = env.AI_IMAGE_API_KEY?.trim() || env.OPENROUTER_API_KEY?.trim();
   if (!value) {
     throw new Error('Missing required environment variable: OPENROUTER_API_KEY');
   }
@@ -269,8 +262,9 @@ export class OpenRouterImageProvider implements ImageProvider {
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.env = options.env ?? process.env;
     this.logger = options.logger ?? console;
-    this.baseUrl = normalizeBaseUrl(
-      this.env.OPENROUTER_BASE_URL?.trim() || DEFAULT_BASE_URL,
+    this.baseUrl = normalizeAiBaseUrl(
+      options.baseUrl || this.env.AI_IMAGE_BASE_URL?.trim() || this.env.OPENROUTER_BASE_URL?.trim() || DEFAULT_BASE_URL,
+      'AI_IMAGE_BASE_URL / OPENROUTER_BASE_URL',
     );
     this.maxOutputBytes =
       options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
@@ -321,7 +315,8 @@ export class OpenRouterImageProvider implements ImageProvider {
     }
 
     // 凭据在进入重试循环前解析：否则缺失 key 会被下面的 catch 归类成可重试的 network 错误。
-    const apiKey = requireApiKey(this.env);
+    const apiKey = 'apiKey' in this.options ? this.options.apiKey : requireApiKey(this.env);
+    if (!apiKey) throw new Error('Missing API key for the selected OpenRouter image connection');
     const upstreamContext: UpstreamErrorContext = {
       redact: createRedactor(apiKey, input.prompt),
       logger: this.logger,

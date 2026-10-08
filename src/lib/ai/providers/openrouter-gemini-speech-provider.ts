@@ -3,7 +3,7 @@ import type {
   SpeechProvider,
   SpeechSynthesisRequest,
 } from '@/lib/ai';
-import { getSpeechModelFor } from '@/lib/config/runtime';
+import { getSpeechModelFor, normalizeAiBaseUrl } from '@/lib/config/runtime';
 import { geminiFallbackVoiceFor } from '@/lib/characters';
 import { toPublicVoiceId } from '@/lib/ai/qwen-voice-map';
 import { readResponseBytes, readResponseJson } from '@/lib/ai/limited-response';
@@ -79,7 +79,7 @@ const GEMINI_VOICE_BY_PROJECT_VOICE: Readonly<Record<string, string>> = {
 };
 
 function requireApiKey(env: RuntimeEnvironment): string {
-  const value = env.OPENROUTER_API_KEY?.trim();
+  const value = env.AI_TTS_API_KEY?.trim() || env.OPENROUTER_API_KEY?.trim();
   if (!value) {
     throw new Error('Missing required environment variable: OPENROUTER_API_KEY');
   }
@@ -87,12 +87,7 @@ function requireApiKey(env: RuntimeEnvironment): string {
 }
 
 function baseUrl(env: RuntimeEnvironment): string {
-  const value = env.OPENROUTER_BASE_URL?.trim() || DEFAULT_BASE_URL;
-  const url = new URL(value);
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new Error('OPENROUTER_BASE_URL must use http or https');
-  }
-  return url.toString().replace(/\/$/, '');
+  return normalizeAiBaseUrl(env.AI_TTS_BASE_URL?.trim() || env.OPENROUTER_BASE_URL?.trim() || DEFAULT_BASE_URL, 'AI_TTS_BASE_URL / OPENROUTER_BASE_URL');
 }
 
 function requestSignal(input: SpeechSynthesisRequest): AbortSignal {

@@ -36,7 +36,8 @@ async function withImageEnv(
 // 改回 AI_IMAGE_MODEL 一行即可回滚。
 test('image generation defaults to the locked OpenRouter GPT Image model', async () => {
   await withImageEnv({}, () => {
-    assert.deepEqual(getProviderConfig().image, {
+    const config = getProviderConfig().image;
+    assert.deepEqual({provider:config.provider,model:config.model}, {
       provider: 'openrouter',
       model: OPENROUTER_GPT_IMAGE_MODEL,
     });

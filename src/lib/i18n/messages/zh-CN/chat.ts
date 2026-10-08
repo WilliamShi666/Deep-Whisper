@@ -13,7 +13,7 @@
  *     所以这里为界面单独持有一份本地化标签；`tests/chat-ux-contract.test.ts` 钉住两边逐字符相等。
  */
 export const chat = {
-  'config.chat': '聊天尚未配置，请填写 DEEPSEEK_API_KEY 后重启服务。',
+  'config.chat': '聊天尚未配置，请在 .env.local 中填写聊天服务配置后重启服务。',
   'config.speech': '配置语音服务后可试听和播放。',
   'config.speech_play': '配置语音服务后可播放',
   'user.owner': '个人主人',

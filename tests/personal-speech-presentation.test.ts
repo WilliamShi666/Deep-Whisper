@@ -22,13 +22,14 @@ test('S7 capabilities distinguish public catalog, gender-compatible primary and 
     { vars: { OPENROUTER_API_KEY: 'synthetic-openrouter-key' }, mode: 'compatibility', fallback: 'none' },
     { vars: { DASHSCOPE_API_KEY: 'synthetic-qwen-key' }, mode: 'catalog', fallback: 'none' },
     { vars: { DASHSCOPE_API_KEY: 'synthetic-qwen-key', OPENROUTER_API_KEY: 'synthetic-openrouter-key' }, mode: 'catalog', fallback: 'gender-compatible' },
+    { vars: { AI_TTS_PROVIDER: 'openai-compatible', AI_TTS_BASE_URL: 'https://private-speech.example/v1', AI_TTS_MODEL: 'private-model', AI_TTS_API_KEY: 'synthetic-compatible-key', AI_TTS_VOICE_FEMALE: 'private-voice' }, mode: 'compatibility', fallback: 'none' },
   ]) {
     process.env = { ...base, ...scenario.vars };
     const response = await GET(new Request('http://127.0.0.1:5000/api/capabilities', { headers: { host: '127.0.0.1:5000' } }));
     assert.equal(response.status, 200);
     const data = await response.json();
     assert.deepEqual(data.speechPresentation, { mode: scenario.mode, fallback: scenario.fallback });
-    assert.doesNotMatch(JSON.stringify(data), /synthetic|Sulafat|Charon|Cherry|Serena|qwen-audio|openrouter-gemini/);
+    assert.doesNotMatch(JSON.stringify(data), /synthetic|Sulafat|Charon|Cherry|Serena|qwen-audio|openrouter-gemini|private-speech|private-model|private-voice/);
   }
 });
 

@@ -192,13 +192,14 @@ export class E2EMockSpeechProvider implements SpeechProvider {
  * 同一文本永远得到同一向量、不同文本几乎必然得到不同向量。
  */
 export class E2EMockEmbeddingProvider implements EmbeddingProvider {
+  constructor(private readonly dimensions = EMBEDDING_DIMENSIONS) {}
   async embed(request: EmbeddingRequest): Promise<number[][]> {
     if (request.texts.length === 0) return [];
     getE2EMockTrace().embeddingCalls.push({ count: request.texts.length });
     return request.texts.map((text) => {
-      const vector = new Array<number>(EMBEDDING_DIMENSIONS).fill(0);
+      const vector = new Array<number>(this.dimensions).fill(0);
       for (let index = 0; index < text.length; index += 1) {
-        vector[index % EMBEDDING_DIMENSIONS] += text.charCodeAt(index) / 1000;
+        vector[index % this.dimensions] += text.charCodeAt(index) / 1000;
       }
       return vector;
     });

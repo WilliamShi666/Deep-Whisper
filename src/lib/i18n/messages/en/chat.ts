@@ -10,7 +10,7 @@ import type { chat as zhChat } from '../zh-CN/chat';
  *     （用户硬约束②：官方 `accent` 字段只留在服务端目录里，不上界面）。
  */
 export const chat: Record<keyof typeof zhChat, string> = {
-  'config.chat': 'Chat is not configured. Set DEEPSEEK_API_KEY and restart the server.',
+  'config.chat': 'Chat is not configured. Configure the chat service in .env.local and restart the server.',
   'config.speech': 'Configure a speech provider to preview and play voices.',
   'config.speech_play': 'Configure a speech provider to play audio',
   'user.owner': 'Personal owner',

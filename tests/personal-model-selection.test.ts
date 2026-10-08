@@ -10,11 +10,11 @@ test('model overrides keep providers and preserve independent vision/default mod
   const config = getPersonalConfig({ DEEPSEEK_API_KEY: 'fixture', DASHSCOPE_API_KEY: 'fixture',
     AI_CHAT_MODEL: 'deepseek-pro', AI_IMAGE_MODEL: 'vendor/reference-image',
     AI_TTS_MODEL: 'qwen-compatible-tts', AI_EMBEDDING_MODEL: 'compatible-embedding' });
-  assert.deepEqual(config.providers.chat, { provider: 'deepseek', model: 'deepseek-pro' });
-  assert.deepEqual(config.providers.visionSafety, { provider: 'deepseek', model: 'deepseek-flash' });
-  assert.deepEqual(config.providers.image, { provider: 'openrouter', model: 'vendor/reference-image' });
-  assert.deepEqual(config.providers.speech, { provider: 'qwen-audio', model: 'qwen-compatible-tts' });
-  assert.deepEqual(config.providers.embedding, { provider: 'dashscope', model: 'compatible-embedding' });
+  assert.deepEqual({ provider: config.providers.chat.provider, model: config.providers.chat.model }, { provider: 'deepseek', model: 'deepseek-pro' });
+  assert.deepEqual({ provider: config.providers.visionSafety.provider, model: config.providers.visionSafety.model }, { provider: 'deepseek', model: 'deepseek-flash' });
+  assert.deepEqual({ provider: config.providers.image.provider, model: config.providers.image.model }, { provider: 'openrouter', model: 'vendor/reference-image' });
+  assert.deepEqual({ provider: config.providers.speech.provider, model: config.providers.speech.model }, { provider: 'qwen-audio', model: 'qwen-compatible-tts' });
+  assert.deepEqual({ provider: config.providers.embedding.provider, model: config.providers.embedding.model }, { provider: 'dashscope', model: 'compatible-embedding' });
   assert.equal(getProviderConfig({}).embedding.model, 'text-embedding-v4');
   assert.equal(getSpeechModelFor('openrouter-gemini', { DASHSCOPE_API_KEY: 'fixture', AI_TTS_MODEL: 'qwen-compatible-tts' }),
     'google/gemini-3.1-flash-tts-preview');

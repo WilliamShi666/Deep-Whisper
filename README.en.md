@@ -8,7 +8,7 @@ This is the **personal, self-hosted open source edition** of Deep Whisper. Run i
 
 Want to see the product first? Visit **[Deep Whisper online](https://www.deepwhisperai.com)**.
 
-This edition uses Next.js, React, TypeScript and SQLite. AI features use your own cloud service API keys, so chat and generated content still need an internet connection. Local use requires no project account, Supabase configuration or PostgreSQL installation, and has no project membership purchase flow.
+This edition uses Next.js, React, TypeScript and SQLite. AI features use services you configure, including cloud APIs or local OpenAI-compatible services. Cloud chat and generation require internet access. Local use requires no project account, Supabase configuration or PostgreSQL installation, and has no project membership purchase flow.
 
 ## What you can do
 
@@ -69,7 +69,7 @@ Do not edit `.env.example`; it is a blank template. Make sure your editor does n
 
 ### Minimum configuration: start with chat
 
-Only one key is required:
+For the default DeepSeek service, only one key is required. To use another service, see “Custom API addresses” below:
 
 ```dotenv
 DEEPSEEK_API_KEY=your-deepseek-api-key
@@ -83,7 +83,7 @@ This enables text chat, personality customization, image understanding and moder
 
 | Variable | Required? | Enables | Where to get it |
 |---|---|---|---|
-| `DEEPSEEK_API_KEY` | **Required** | Chat, image understanding, moderation and memory organization | [DeepSeek API keys](https://platform.deepseek.com/api_keys) |
+| `DEEPSEEK_API_KEY` | **Required for default chat** | Chat, image understanding, moderation and memory organization | [DeepSeek API keys](https://platform.deepseek.com/api_keys) |
 | `OPENROUTER_API_KEY` | Optional | Companion photos and Gemini voice | [OpenRouter API keys](https://openrouter.ai/settings/keys) |
 | `DASHSCOPE_API_KEY` | Optional | Qwen voice and vector retrieval | [Qianwen AI platform API key guide](https://platform.qianwenai.com/docs/api-reference/preparation/api-key) |
 
@@ -145,14 +145,70 @@ To choose another model, replace only its value, save the file and restart. Open
 
 Models must support the application's existing API contract:
 
-- **Chat:** streaming chat completions and the structured JSON/thinking options used by personality and memory tasks. Image chat also requires a multimodal chat model. Upload moderation separately uses `AI_VISION_MODEL`, which must support images and the moderation response format; its default remains `deepseek-flash` when chat changes.
+- **Chat:** streaming chat completions, structured JSON and the native DeepSeek thinking options used by personality and memory tasks. Image chat also requires a multimodal chat model. Upload moderation separately uses `AI_VISION_MODEL`, which must support images and the moderation response format; its default remains `deepseek-flash` when chat changes.
 - **Images:** OpenRouter's `/images` endpoint, reference images and the response formats handled by the app. The two built-in models retain their own `quality` or `resolution` parameters. Other models use common parameters with the provider's default quality. Outputs must be PNG, JPEG or WebP. See [OpenRouter image API documentation](https://openrouter.ai/docs/guides/overview/multimodal/image-generation) for model discovery and capabilities.
 - **Speech:** Qwen speech models must use the existing synthesis response with an audio URL on the allowed Alibaba Cloud host and accept the configured voices. Gemini speech models must support OpenRouter `/audio/speech` and return a supported audio format with the existing Gemini voices. The speech model and voice selection are separate settings.
-- **Embeddings:** the model must support the configured embeddings endpoint and **1024-dimensional** output. The dimension is fixed for this edition. After changing the embedding model, the application asynchronously rebuilds vectors for existing memories; it preserves the memory facts and keyword index. Keyword retrieval continues while compatible vectors are rebuilt. Rebuilding consumes API usage on your provider account.
+- **Embeddings:** the model must support the configured embeddings endpoint and floating-point output, with 1024 dimensions by default. Other dimensions and fixed-dimension endpoints can be configured as described below. After changing the embedding model, the application asynchronously rebuilds vectors for existing memories; it preserves the memory facts and keyword index. Keyword retrieval continues while compatible vectors are rebuilt. Rebuilding consumes API usage on your provider account.
 
 Existing audio caches are preserved. Test a changed speech model with a new assistant message; after also changing voices, the “regenerate with new voice” action can replace a cached recording.
 
 `doctor` checks local configuration, not your provider's current model catalogue or account permissions. If a new model is unavailable or incompatible, restore the previous model ID and restart. See the [complete configuration guide](docs/opensource/04-environment.md) for details.
+
+### Optional: custom API addresses and other services
+
+Chat, images, speech and embeddings can each use an **OpenAI-compatible service**. They can use different services, and a DeepSeek key is not required for compatible chat. Verify the endpoint contract first: changing a URL does not convert a provider's native protocol into the compatible protocol.
+
+| Capability | Protocol selection | API root URL | Key | Model |
+|---|---|---|---|---|
+| Chat | `AI_CHAT_PROVIDER=openai-compatible` | `AI_CHAT_BASE_URL` | `AI_CHAT_API_KEY` | `AI_CHAT_MODEL` |
+| Images | `AI_IMAGE_PROVIDER=openai-compatible` | `AI_IMAGE_BASE_URL` | `AI_IMAGE_API_KEY` | `AI_IMAGE_MODEL` |
+| Speech | `AI_TTS_PROVIDER=openai-compatible` | `AI_TTS_BASE_URL` | `AI_TTS_API_KEY` | `AI_TTS_MODEL` |
+| Embeddings | `AI_EMBEDDING_PROVIDER=openai-compatible` | `AI_EMBEDDING_BASE_URL` | `AI_EMBEDDING_API_KEY` | `AI_EMBEDDING_MODEL` |
+
+**Required and optional:** each enabled compatible capability needs its `PROVIDER`, `BASE_URL` and `MODEL`. Set its `API_KEY` when the service requires authentication; leave it blank only for an unauthenticated service. Images, speech and embeddings are optional, so start with chat if you prefer. Compatible profiles never borrow `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY` or `DASHSCOPE_API_KEY`.
+
+The following is a complete configuration skeleton. **Replace example URLs, models and keys with values from your service**, and remove entire capability groups you do not use. Repeat a URL and key when services share them; otherwise configure each independently.
+
+```dotenv
+# Chat: streaming Chat Completions and structured JSON; images need multimodal chat
+AI_CHAT_PROVIDER=openai-compatible
+AI_CHAT_BASE_URL=http://127.0.0.1:1234/v1
+AI_CHAT_MODEL=your-chat-model
+AI_CHAT_API_KEY=
+
+# Photos: /images/edits with reference images, synchronous Base64 output
+AI_IMAGE_PROVIDER=openai-compatible
+AI_IMAGE_BASE_URL=https://your-image-service.example/v1
+AI_IMAGE_MODEL=your-image-model
+AI_IMAGE_API_KEY=your-image-service-key
+
+# Speech: /audio/speech returning MP3/WAV bytes
+AI_TTS_PROVIDER=openai-compatible
+AI_TTS_BASE_URL=https://your-speech-service.example/v1
+AI_TTS_MODEL=your-speech-model
+AI_TTS_API_KEY=your-speech-service-key
+AI_TTS_VOICE_FEMALE=alloy
+AI_TTS_VOICE_MALE=onyx
+
+# Embeddings: /embeddings returning floating-point vectors
+AI_EMBEDDING_PROVIDER=openai-compatible
+AI_EMBEDDING_BASE_URL=http://127.0.0.1:1234/v1
+AI_EMBEDDING_MODEL=your-embedding-model
+AI_EMBEDDING_API_KEY=
+AI_EMBEDDING_DIMENSIONS=1024
+AI_EMBEDDING_SEND_DIMENSIONS=true
+```
+
+Enter the **API root**, such as `https://service.example/v1`, including any required prefix. Do not include `/chat/completions` or `/audio/speech`; the application appends each endpoint path. HTTP and HTTPS are supported. URL-embedded usernames/passwords, query strings and fragments are rejected. Put credentials in key settings, never the URL.
+
+- **Image understanding and moderation:** compatible vision inherits the chat connection and model by default. A text-only chat model still supports text chat, but uploads require a multimodal model supporting structured moderation. To override vision, set `AI_VISION_PROVIDER=openai-compatible`, `AI_VISION_BASE_URL`, `AI_VISION_MODEL` and `AI_VISION_API_KEY`. With compatible chat, omitted `AI_VISION_PROVIDER` or explicit `openai-compatible` vision inherits chat; you may override only its URL, model or key. Compatible vision without compatible chat needs its own URL and model. A different vision URL requires its own key; the chat key is not sent to the new endpoint. Native DeepSeek vision retains its independent `deepseek-flash` default.
+- **Photos:** the service must accept reference images through `/images/edits` and return synchronous Base64 PNG/JPEG/WebP images. A generations-only service cannot preserve the selected character for selfies; reference images are never silently discarded. Asynchronous jobs and URL-only image responses are not supported in this adapter.
+- **Speech:** `AI_TTS_VOICE_FEMALE` / `AI_TTS_VOICE_MALE` default to `alloy` / `onyx`; change them to voice IDs supported by your service. Compatible mode maps these two voices by companion gender and shows a compatibility notice. It does not promise the 25 Qwen voices, and failures do not automatically call another provider.
+- **Embeddings:** set `AI_EMBEDDING_DIMENSIONS` to the actual output dimension, default `1024`, an integer from 1 to 65536. For fixed-dimension endpoints that reject the optional `dimensions` parameter, use `AI_EMBEDDING_SEND_DIMENSIONS=false` and set the correct dimension, such as `768`. Incorrect vector lengths are rejected while keyword retrieval remains available.
+
+After changing protocol, URL, model or dimension, **restart the app and worker**; `pnpm dev` / `pnpm start` supervises both together. A changed vector space rebuilds memory vectors in the background, preserving facts and the FTS/BM25 index. Same-named models at different endpoints are not mixed. Rebuilding consumes provider usage; key rotation alone does not rebuild vectors. Existing audio caches remain playable and are not automatically regenerated after model or URL changes.
+
+Existing `DEEPSEEK_BASE_URL`, `OPENROUTER_BASE_URL`, `DASHSCOPE_TTS_BASE_URL` and `DASHSCOPE_EMBEDDING_BASE_URL` remain supported. Native adapters also accept each capability's `AI_*_BASE_URL` and `AI_*_API_KEY` overrides, which take precedence over matching legacy variables. The selected `AI_*_PROVIDER` still determines the request protocol. Use HTTPS for remote services and credentials intended for that endpoint.
 
 ### Other settings: keep the defaults initially
 
@@ -187,8 +243,8 @@ One command starts both the website and the memory/letter background workers. Yo
 
 1. Follow the first-run steps to choose gender, orientation, character and appearance proportions. Customize your companion's name, personality and nickname for you, and confirm your own timezone.
 2. Send a message such as “Hi, I'd love to chat with you today” and watch the reply appear progressively.
-3. With a speech key configured, click the **read-aloud button** below an assistant message. Audio is generated on click and never plays automatically. Change voices in companion settings.
-4. With an OpenRouter key configured, explicitly ask “Send me a selfie of you standing by the window,” then wait for the photo to appear in chat.
+3. With speech configured, click the **read-aloud button** below an assistant message. Audio is generated on click and never plays automatically. Change voices in companion settings.
+4. With image generation configured, explicitly ask “Send me a selfie of you standing by the window,” then wait for the photo to appear in chat.
 5. Try memory: “I drink tea without sugar and usually prefer osmanthus oolong. Please remember that.” After background organization finishes, open a new conversation with **the same companion** and ask “Do you remember how I like my tea?” Memory organization is asynchronous and may not finish immediately after a message.
 6. Open appearance or companion settings to adjust wallpapers, colors, personality, voice and letter preferences. Selecting another companion preserves the previous companion and conversations; memory is scoped to each companion.
 
@@ -213,8 +269,8 @@ Get SMTP settings and an app password from your mailbox provider. Port 465 uses 
 |---|---|
 | `pnpm` or `node` is unavailable | Check installation, reopen your terminal, then check versions. |
 | `package.json` cannot be found | Run `cd Deep-Whisper`, or enter the extracted project directory if you downloaded a ZIP. |
-| `doctor` reports a missing `DEEPSEEK_API_KEY` | Check the root `.env.local`, its filename, and that the value is a real key rather than example text. |
-| Voice or photos report “not configured” | Add the corresponding optional key, save and restart. |
+| `doctor` reports unconfigured chat | For the default service, check `DEEPSEEK_API_KEY`. For compatible chat, check provider, URL, model and any required key. Check the root `.env.local` filename and replace example text. |
+| Voice or photos report “not configured” | Add the native optional key or the compatible capability's provider, URL, model and required key; save and restart. |
 | AI requests time out or fail to connect | Check whether the computer/terminal running the app can reach the provider endpoint. Your browser and Node requests may use different proxy settings. Check terminal errors and model permissions; never paste keys into issues. |
 | Qwen speech or embeddings cannot connect | Check the matching key/endpoints and terminal network. Use `MEMORY_RETRIEVAL_MODE=keyword` while vectors are unavailable; chat and keyword memory still work. |
 | A newly selected model returns an error | Check the exact model ID, endpoint contract, capabilities and API account access. Restore the previous ID and restart if necessary. |
@@ -256,4 +312,4 @@ pnpm lint
 
 Default tests use temporary SQLite databases and simulated external services. They make no real AI calls and send no real email. Real provider capabilities and individual operating systems need their own verification.
 
-Code and project documentation use the [MIT license](LICENSE). Artwork, wallpapers, voice samples and branding have separate terms in [ASSETS.md](ASSETS.md). Some detailed project documents are currently in Chinese; this guide contains the steps needed to get started in English.
+Code and project documentation use the [MIT license](LICENSE). The 16 whale-girl derivative character illustrations and 40 wallpaper sets, including landscape versions and thumbnails, use **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)**: attribution, noncommercial use and share-alike. Retain source and modification notices when distributing. Original character: 上善无形; DeepSeek-element adaptation: ZipZipPipe; project adaptations: WilliamShi666 / Deep Whisper. Independent heart-holding blue-whale branding and marks have separate terms. See [ASSETS.md](ASSETS.md) for scope, attribution links and terms. Some detailed project documents are currently in Chinese; this guide contains the steps needed to get started in English.

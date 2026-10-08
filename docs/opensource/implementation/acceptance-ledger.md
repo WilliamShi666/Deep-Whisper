@@ -1,6 +1,6 @@
 # Personal edition acceptance ledger
 
-2026-10-07. Plan approved; implementation uses an isolated managed worktree, synthetic SQLite databases and private media. MIT code license approved. Original production project and remote databases were not changed. Owner approved the artwork, wallpapers and branding distribution for personal self-hosting on 2026-10-07; see ASSETS.md. Historical implementation reports below predate publication; current follow-up evidence is recorded at the end.
+2026-10-07. Plan approved; implementation uses an isolated managed worktree, synthetic SQLite databases and private media. MIT code license approved. Original production project and remote databases were not changed. Owner approved personal self-hosting distribution on 2026-10-07. On 2026-10-08 the owner clarified that character artwork and wallpaper derivatives use CC BY-NC-SA 4.0; independent heart-holding blue-whale branding retains separate terms. See ASSETS.md for scope, attribution and source-verification boundaries. Historical implementation reports below predate publication; current follow-up evidence is recorded at the end.
 
 This ledger separates implementation evidence from final acceptance. Independent code/spec reviews preceded the fresh dedicated E2E run; review findings were repaired and independently rechecked. Offline tests do not establish real provider output, voice quality or mailbox delivery. macOS host checks do not establish native Windows/Linux installation.
 
@@ -74,3 +74,43 @@ Initial public release: d241756 in WilliamShi666/Deep-Whisper, with a clean root
 TDD: personal-model-selection captured six behavioral failures before the runtime/adapter changes, then six passes. personal-embedding-model captured six failures before implementing configured embedding transport, matching query/worker namespaces and model-switch job rebuilding, then six passes. Real SQLite fixtures cover A→B→A, retained facts/FTS, old-space exclusion, bounded catch-up, preserved retry budgets and stale lease fencing. Existing fixed-model rejection tests were updated to the new configurable model contract; malformed IDs, provider enums, response drift and media boundary tests remain.
 
 Final full unit suite: **1060/1060**, zero failures/skips. TypeScript passed; lint has zero errors and 25 existing warnings. Independent code and spec/documentation reviews passed. This follow-up does not add browser E2E, paid model requests or real email delivery checks; it tests provider request/response contracts with network fakes and memory behavior with real temporary SQLite. Cloud model availability and permissions remain the user's provider-account configuration.
+
+
+## Custom API connections and asset-license correction (2026-10-08)
+
+The accepted extension adds independent API roots, keys and models for chat, images,
+speech and embeddings, retaining native provider profiles and successful API/SSE
+contracts. Compatible vision inherits the compatible chat connection unless
+independently overridden; a changed endpoint cannot inherit the chat key. The
+character/wallpaper assets use CC BY-NC-SA 4.0 with original and project attribution;
+MIT remains the code/documentation license and independent brand artwork retains
+separate terms. See ASSETS.md for the owner-confirmed scope and source-check boundary.
+
+| Spec | Implementation and verification |
+|---|---|
+| OSS-043 | Shared runtime connection parser, URL validation, legacy precedence, unauthenticated compatible capabilities, doctor and credential-free mocks. `personal-endpoint-config` five behavioral cases; public speech DTO regression excludes key/model/voice/endpoint data. |
+| OSS-044 | Chat Completions/SSE/structured JSON and independent vision registry; compatible transport tests verify no vendor thinking fields, inherited/overridden vision connection, explicit native missing-key refusal and bounded cancellation. Existing frozen route/SSE regression tests pass. |
+| OSS-045 | Reference-preserving multipart edits, synchronous validated Base64 images and binary MP3/WAV speech; gender voice mapping, safe errors and independent native Gemini fallback. `openai-compatible-provider` 18 network-boundary tests plus native provider regressions. |
+| OSS-046 | Shared protocol/endpoint/model/dimension namespace; optional dimensions, ordered batching, preserved legacy default namespace, key-rotation stability. `personal-embedding-endpoints` eight cases use fake network and real temporary SQLite for switching, FTS, stale output and running A→B→A; existing model/retry/lease/batch-bound tests retained. No schema migration. |
+| OSS-047 | Bilingual ASSETS/README and THIRD_PARTY_NOTICES clarify 16 character images and 40 wallpaper sets including 120 wallpaper variants, attribution, changes, noncommercial/share-alike terms and separate brand rights. Publication manifest records the corrected terms and refreshed file hashes. |
+| OSS-048 | Both README guides and env templates explain default and compatible setup, required/optional configuration, root paths, protocol/voice/dimension compatibility, restart, cache and rebuild usage. Independent spec reviewer checked documentation against runtime; local Markdown links were checked. |
+
+TDD evidence: five new configuration cases first failed on the old runtime, then
+passed. New adapter/embedding test imports initially failed before their new modules
+existed (scaffolding RED, not evidence of a behavioral failure). Independent code
+review then identified a live A→B→A desired-target marker defect; a real temporary
+SQLite test reproduced it before the fix, and the corrected query now passes without
+spending extra retries. The independent reviewer rechecked the fix.
+
+Final validation: **1091/1091 unit tests**, zero failures/cancellations/skips;
+TypeScript and production build passed. ESLint reports zero errors and 25 pre-existing
+warnings. Independent code review passed after the above fix, with 70 targeted checks;
+independent spec review passed with 31 targeted checks. No remaining review findings.
+
+Per the user's instruction this increment does not add browser E2E, paid provider
+calls or real email delivery tests. Passing fake-network contracts does not prove
+any particular third-party account/model supports these interfaces. No remote
+DB commands or changes to local credentials, user data or the running instance were
+made. The original creators' permission pages were not independently retrieved;
+the asset notice records the user's license confirmation and community attribution
+reference without presenting it as a per-file original authorization document.

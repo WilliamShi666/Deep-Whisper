@@ -18,3 +18,17 @@ caniuse-lite data (CC-BY-4.0). Preserve their bundled notices and upstream sourc
 references when redistributing binary/container dependencies. Optional native
 packages vary by operating system; this inventory was generated on macOS and is
 not evidence that other platform bundles have been audited.
+
+## Character artwork and attribution
+
+The 16 character illustrations and 40 wallpaper sets (including landscape
+versions and thumbnails) derive from the 大肥鱼 / whale-girl character and use
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), separately
+from MIT code. Original character: [上善无形](https://space.bilibili.com/4456176);
+DeepSeek-element adaptation: [ZipZipPipe](https://space.bilibili.com/4168597).
+Community reference: [Fish Archive](https://fisharchive.cc/). Project adaptations:
+[WilliamShi666 / Deep Whisper](https://github.com/WilliamShi666/Deep-Whisper).
+Preserve attribution, license links and modification notices when sharing;
+commercial permissions require the relevant rights holders. See
+[ASSETS.md](ASSETS.md) for the exact scope, source-verification boundary and
+separate branding terms.

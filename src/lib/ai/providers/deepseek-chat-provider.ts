@@ -12,7 +12,7 @@ import {
 } from '@/lib/ai/contracts';
 
 import { DEEPSEEK_VISION_MODEL } from '../model-defaults';
-import { readModelId } from '@/lib/config/runtime';
+import { readModelId, normalizeAiBaseUrl } from '@/lib/config/runtime';
 export { DEEPSEEK_VISION_MODEL } from '../model-defaults';
 
 // DeepSeek 官方会静默改名：旧名仍可请求，但响应里的 model 会被规范化成新名。
@@ -38,6 +38,8 @@ type RuntimeEnvironment = Readonly<Record<string, string | undefined>>;
 
 interface DeepSeekChatProviderOptions {
   model: string;
+  baseUrl?: string;
+  apiKey?: string;
   fetchImpl?: typeof fetch;
   env?: RuntimeEnvironment;
   retryDelayMs?: number;
@@ -82,17 +84,8 @@ class DeepSeekHttpError extends Error {
   }
 }
 
-function normalizeBaseUrl(value: string): string {
-  const normalized = value.trim().replace(/\/+$/, '');
-  const url = new URL(normalized);
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new Error('DEEPSEEK_BASE_URL must use http or https');
-  }
-  return normalized;
-}
-
 function requireApiKey(env: RuntimeEnvironment): string {
-  const value = env.DEEPSEEK_API_KEY?.trim();
+  const value = env.AI_CHAT_API_KEY?.trim() || env.DEEPSEEK_API_KEY?.trim();
   if (!value) {
     throw new Error('Missing required environment variable: DEEPSEEK_API_KEY');
   }
@@ -211,10 +204,16 @@ export class DeepSeekChatProvider implements ChatProvider {
     readModelId(options.model, 'AI_CHAT_MODEL / AI_VISION_MODEL');
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.env = options.env ?? process.env;
-    this.baseUrl = normalizeBaseUrl(
-      this.env.DEEPSEEK_BASE_URL?.trim() || DEFAULT_BASE_URL,
+    this.baseUrl = normalizeAiBaseUrl(
+      options.baseUrl || this.env.AI_CHAT_BASE_URL?.trim() || this.env.DEEPSEEK_BASE_URL?.trim() || DEFAULT_BASE_URL,
+      'AI_CHAT_BASE_URL / DEEPSEEK_BASE_URL',
     );
     this.retryDelayMs = options.retryDelayMs ?? 250;
+  }
+
+  private requireConfiguredKey(): string {
+    if (!this.options.apiKey) throw new Error('Missing API key for the selected DeepSeek connection');
+    return this.options.apiKey;
   }
 
   private assertResponseModel(model: string | undefined): void {
@@ -229,6 +228,7 @@ export class DeepSeekChatProvider implements ChatProvider {
     stream: boolean,
     outputSchema?: StructuredOutputSchema,
   ): Promise<Response> {
+    const apiKey = 'apiKey' in this.options ? this.requireConfiguredKey() : requireApiKey(this.env);
     // performance.now() budgets are fractional; native AbortSignal needs integer ms.
     const timeoutMs = Math.floor(input.timeoutMs ?? DEFAULT_TIMEOUT_MS);
     // One deadline covers attempts, backoff and consumption of the returned body.
@@ -264,7 +264,7 @@ export class DeepSeekChatProvider implements ChatProvider {
           {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${requireApiKey(this.env)}`,
+              Authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
             },
             body: requestBody,

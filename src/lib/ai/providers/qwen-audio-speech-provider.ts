@@ -4,7 +4,7 @@ import type {
   SpeechSynthesisRequest,
 } from '@/lib/ai';
 import { QWEN_TTS_MODEL, isQwenVoiceId } from '@/lib/ai/qwen-voices';
-import { getSpeechModelFor } from '@/lib/config/runtime';
+import { getSpeechModelFor, normalizeAiBaseUrl } from '@/lib/config/runtime';
 import { toPublicVoiceId, upstreamVoiceIdFor } from '@/lib/ai/qwen-voice-map';
 import { readResponseBytes, readResponseJson } from '@/lib/ai/limited-response';
 
@@ -40,7 +40,7 @@ interface QwenSynthesisPayload {
 }
 
 function requireApiKey(env: RuntimeEnvironment): string {
-  const value = env.DASHSCOPE_API_KEY?.trim();
+  const value = env.AI_TTS_API_KEY?.trim() || env.DASHSCOPE_API_KEY?.trim();
   if (!value) {
     throw new Error('Missing required environment variable: DASHSCOPE_API_KEY');
   }
@@ -48,12 +48,7 @@ function requireApiKey(env: RuntimeEnvironment): string {
 }
 
 function baseUrl(env: RuntimeEnvironment): string {
-  const value = env.DASHSCOPE_TTS_BASE_URL?.trim() || DEFAULT_BASE_URL;
-  const url = new URL(value);
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new Error('DASHSCOPE_TTS_BASE_URL must use http or https');
-  }
-  return url.toString().replace(/\/$/, '');
+  return normalizeAiBaseUrl(env.AI_TTS_BASE_URL?.trim() || env.DASHSCOPE_TTS_BASE_URL?.trim() || DEFAULT_BASE_URL, 'AI_TTS_BASE_URL / DASHSCOPE_TTS_BASE_URL');
 }
 
 function allowedAudioHostSuffix(env: RuntimeEnvironment): string {

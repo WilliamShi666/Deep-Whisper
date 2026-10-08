@@ -41,11 +41,11 @@ async function withProviderEnv(
 test('chat and vision default independently to the DeepSeek vision model', async () => {
   await withProviderEnv({}, () => {
     const config = getProviderConfig();
-    assert.deepEqual(config.chat, {
+    assert.deepEqual({provider:config.chat.provider,model:config.chat.model}, {
       provider: 'deepseek',
       model: DEEPSEEK_VISION_MODEL,
     });
-    assert.deepEqual(config.visionSafety, {
+    assert.deepEqual({provider:config.visionSafety.provider,model:config.visionSafety.model}, {
       provider: 'deepseek',
       model: DEEPSEEK_VISION_MODEL,
     });

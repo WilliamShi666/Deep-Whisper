@@ -14,7 +14,7 @@
 | OSS-006 | doctor 默认只做配置/路径/SQLite 特性与版本检查，不发送付费请求或邮件；明示 --live 才做有上限的可选检测 | transport 调用计数=0；live 独立 guard |
 | OSS-007 | app、worker、脚本共享配置加载契约；shell env 优先；按 NODE_ENV 使用 Next 相应文件优先级；test 不继承真实 `.env.local` | dev/prod/test 加载矩阵、复制的旧 env 不会引发 PG/商户连接 |
 
-空 key / 占位值视为未配置。无 DeepSeek key 的 doctor 返回非零并说明获取位置；页面可展示配置状态，但真实聊天不假装成功。主模板仅含必要和常用项，高级模板不得与实际 parser 漂移。
+空 key / 占位值视为未配置。原生DeepSeek聊天缺key时doctor返回非零并说明获取位置；完整OpenAI兼容聊天配置不要求DeepSeek key，无认证兼容服务允许key留空。页面可展示配置状态，但真实聊天不假装成功。主模板仅含必要和常用项，高级模板不得与实际 parser 漂移。
 
 ## 2. 身份和功能
 
@@ -108,3 +108,14 @@ E2E至少覆盖：最小配置dev与build/start、完整配置mock媒体、缺�
 - OSS-042：中英文README与两env模板说明必填key和可选模型ID、提供商兼容要求、重启与向量补建用量。公开导出保留英文README，更新发布manifest。
 
 验证：临时SQLite的模型切换/重建/租约/重试行为测试，模拟transport的模型字段与媒体字节契约，独立code/spec复核；本次不扩展浏览器端到端或付费live验收。
+
+## 自定义AI接口与素材协议补充（2026-10-08）
+
+本节扩展039–042；此前“同提供商模型配置”是历史增量，不再限制只能使用固定提供商。
+
+- OSS-043：chat/image/TTS/embedding provider增加openai-compatible，各有AI_*_BASE_URL/API_KEY/MODEL；兼容profile要求显式根地址和模型，key仅在无认证服务时可空，禁止继承其他供应商key。原生profile及旧变量兼容，新变量优先；HTTP(S)根地址保留前缀、规范化尾斜杠，拒绝凭据/query/hash。配置、doctor和能力状态不普遍要求DeepSeek key，也不泄漏服务端地址/key。
+- OSS-044：兼容chat使用流式/非流式Chat Completions与结构化JSON，不发送DeepSeek专有thinking字段；vision provider省略或为openai-compatible时继承兼容chat，可独立覆盖视觉模型/地址/key，地址变化不得继承chat key。没有兼容chat可继承时，兼容vision需自己的地址和模型。文本模型不冒充多模态能力；上传审核仍fail closed。前端包装和user_message/chunk/done/error不改变。
+- OSS-045：兼容image有参考图走multipart edits，无参考图走generations；只支持同步Base64 PNG/JPEG/WebP，保留角色参考，不降级丢弃。兼容speech接收/audio/speech的MP3/WAV字节，女生/男生映射AI_TTS_VOICE_FEMALE/MALE（默认alloy/onyx），沿用公开音色代号与兼容模式提示，不宣称25个真实上游音色，不自动跨提供商回退；原千问/Gemini行为保留。bytes先保存私有存储，再写消息URL。
+- OSS-046：Embedding维度可配置，AI_EMBEDDING_DIMENSIONS默认1024（1–65536整数），AI_EMBEDDING_SEND_DIMENSIONS默认true且只接受true/false；响应向量严格等长。自定义命名空间覆盖协议、规范化地址、模型、维度，不含key。切换空间异步有界补建，保留facts/FTS及重试预算，查询与worker共用配置，旧任务结果拒绝写入；仅换key不补建。默认旧profile向量继续可用，无schema迁移。
+- OSS-047：ASSETS与中英文README明确16角色、40套壁纸及横版/缩略图采用CC BY-NC-SA4.0，保留原始作者、社区来源、项目改编与修改记录；商业使用须相关权利人授权，代码MIT不替代素材许可。独立抱心蓝鲸品牌另行授权，包含角色的品牌素材遵守角色协议。公开manifest同步更新。
+- OSS-048：中英文上手提供原生与兼容两条启动路径，明确必填/可选、URL前缀、模型/音色协议、维度、重启app与worker、向量补建费用及缓存行为。网络边界fake、真实临时SQLite验证和独立code/spec review覆盖此增量；按用户要求本次不新增浏览器E2E、付费live模型或真实邮件投递验收。

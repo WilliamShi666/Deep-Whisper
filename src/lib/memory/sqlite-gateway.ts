@@ -12,6 +12,8 @@ export interface SqliteMemoryOptions {
   embed?: MemoryEmbed;
   embeddingModel?: string;
   embeddingDimensions?: number;
+  /** App/worker runtime fence: reject output after its selected vector space changes. */
+  isEmbeddingTargetCurrent?: () => boolean;
   organizerModel?: string;
   now?: () => Date;
   limit?: number;

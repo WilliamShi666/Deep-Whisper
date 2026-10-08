@@ -20,11 +20,12 @@ import type { EmbeddingProvider } from './embedding-contracts';
  */
 const EMBEDDING_REGISTRY: Record<EmbeddingProviderId, (env: RuntimeEnvironment) => EmbeddingProvider> = {
   dashscope: (env) => new DashScopeEmbeddingProvider(env),
+  'openai-compatible': (env) => new DashScopeEmbeddingProvider(env),
 };
 
 export function getEmbeddingProvider(
   env: RuntimeEnvironment = process.env,
 ): EmbeddingProvider {
-  if (isE2EMockProviderMode(env)) return new E2EMockEmbeddingProvider();
+  if (isE2EMockProviderMode(env)) return new E2EMockEmbeddingProvider(getProviderConfig(env).embedding.dimensions);
   return EMBEDDING_REGISTRY[getProviderConfig(env).embedding.provider](env);
 }

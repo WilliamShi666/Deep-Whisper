@@ -8,7 +8,6 @@ import { getProviderConfig } from '@/lib/config/runtime';
 export const EMBEDDING_DIMENSIONS = 1024;
 export const EMBEDDING_MODEL = 'text-embedding-v4';
 
-const DEFAULT_BASE_URL = 'https://maas.qianwenaiapi.com/compatible-mode/v1';
 const EMBEDDINGS_PATH = '/embeddings';
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TEXTS_PER_REQUEST = 10;
@@ -20,23 +19,6 @@ const RETRY_BASE_MS = 250;
 interface EmbeddingPayload {
   data?: Array<{ embedding?: number[]; index?: number }>;
   error?: { message?: string };
-}
-
-function requireApiKey(env: RuntimeEnvironment): string {
-  const value = env.DASHSCOPE_API_KEY?.trim();
-  if (!value) {
-    throw new Error('Missing required environment variable: DASHSCOPE_API_KEY');
-  }
-  return value;
-}
-
-function baseUrl(env: RuntimeEnvironment): string {
-  const value = env.DASHSCOPE_EMBEDDING_BASE_URL?.trim() || DEFAULT_BASE_URL;
-  const url = new URL(value);
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
-    throw new Error('DASHSCOPE_EMBEDDING_BASE_URL must use http or https');
-  }
-  return url.toString().replace(/\/$/, '');
 }
 
 function isFiniteVector(value: unknown, expected: number): boolean {
@@ -65,29 +47,31 @@ export class DashScopeEmbeddingProvider implements EmbeddingProvider {
       throw new Error(`Embedding batch is too large (max ${MAX_TEXTS_PER_CALL})`);
     }
     // 白名单/配置校验排在取 key 之前：缺 key 也要先确认「这不是一次白付的调用」。
-    const model = getProviderConfig(this.env).embedding.model;
-    const apiKey = requireApiKey(this.env);
+    const config = getProviderConfig(this.env).embedding;
+    if (config.provider === 'dashscope' && !config.apiKey) {
+      throw new Error('Missing required environment variable: AI_EMBEDDING_API_KEY or DASHSCOPE_API_KEY');
+    }
     const result: number[][] = [];
     for (let offset = 0; offset < texts.length; offset += MAX_TEXTS_PER_REQUEST) {
       const batch = texts.slice(offset, offset + MAX_TEXTS_PER_REQUEST);
-      result.push(...await this.embedBatch(batch, request.signal, apiKey, model));
+      result.push(...await this.embedBatch(batch, request.signal, config));
     }
     return result;
   }
 
-  private async embedBatch(texts: string[], signal: AbortSignal | undefined, apiKey: string, model: string): Promise<number[][]> {
+  private async embedBatch(texts: string[], signal: AbortSignal | undefined, config: ReturnType<typeof getProviderConfig>['embedding']): Promise<number[][]> {
     for (let attempt = 1; ; attempt += 1) {
       // 契约要求：既传调用方的 signal，**又**保留一个有限超时。
       // 写成 `request.signal ?? AbortSignal.timeout(...)` 是错的 —— 调用方一旦传了 signal，
       // 超时就被顶掉，等于没有超时；兄弟适配器一律用 AbortSignal.any 合成。
       const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MS);
-      const response = await this.fetchImpl(`${baseUrl(this.env)}${EMBEDDINGS_PATH}`, {
+      const response = await this.fetchImpl(`${config.baseUrl}${EMBEDDINGS_PATH}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        headers: { 'content-type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) },
         body: JSON.stringify({
-          model,
+          model: config.model,
           input: texts,
-          dimensions: EMBEDDING_DIMENSIONS,
+          ...(config.sendDimensions ? { dimensions: config.dimensions } : {}),
           encoding_format: 'float',
         }),
         signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
@@ -114,8 +98,8 @@ export class DashScopeEmbeddingProvider implements EmbeddingProvider {
         throw new Error(`Embedding vector count mismatch: expected ${texts.length}, got ${raw?.length ?? 0}`);
       }
       for (const vector of raw) {
-        if (!isFiniteVector(vector, EMBEDDING_DIMENSIONS)) {
-          throw new Error(`Embedding vector is invalid: expected ${EMBEDDING_DIMENSIONS} finite dimensions`);
+        if (!isFiniteVector(vector, config.dimensions)) {
+          throw new Error(`Embedding vector is invalid: expected ${config.dimensions} finite dimensions`);
         }
       }
       return raw as number[][];

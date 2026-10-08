@@ -1,7 +1,7 @@
 /** Personal memory wiring: SQLite owns persistence; no Mem0/Supabase configuration. */
 import { getPersonalConfig, getProviderConfig, type RuntimeEnvironment } from '@/lib/config/runtime';
 import { getEmbeddingProvider } from '@/lib/ai/embedding-provider';
-import { EMBEDDING_DIMENSIONS } from '@/lib/ai/providers/dashscope-embedding-provider';
+import { getEmbeddingNamespace } from '@/lib/ai/embedding-namespace';
 import { getSqlite } from '@/storage/database/db';
 import { createProviderMemoryOrganizer } from './organizer';
 import { createMemoryService } from './service';
@@ -14,25 +14,29 @@ export function isMemoryEnabled(env?: RuntimeEnvironment): boolean { void env; r
 export function isLongTermMemoryEnabled(): boolean { return true; }
 export function getMemoryDependencies(env: RuntimeEnvironment = process.env, db: ReturnType<typeof getSqlite> = getSqlite()) {
   const config = getPersonalConfig(env, { strict: false });
+  const provider = config.memoryRetrievalMode === 'hybrid' ? getEmbeddingProvider({ ...env }) : undefined;
   return { appId: PERSONAL_MEMORY_APP_ID, gateway: createSqliteMemoryGateway(db, {
     retrievalMode: config.memoryRetrievalMode,
-    embeddingModel: config.providers.embedding.model,
-    embeddingDimensions: EMBEDDING_DIMENSIONS,
-    embed: config.memoryRetrievalMode === 'hybrid' ? (request) => getEmbeddingProvider(env).embed(request) : undefined,
+    embeddingModel: getEmbeddingNamespace(config.providers.embedding),
+    embeddingDimensions: config.providers.embedding.dimensions,
+    embed: provider ? request => provider.embed(request) : undefined,
   }) };
 }
 /** The supervised worker uses the same resolved mode and provider namespace as chat. */
 export function getMemoryWorkerOptions(env: RuntimeEnvironment = process.env) {
   const config = getPersonalConfig(env, { strict: false });
+  const embeddingModel = getEmbeddingNamespace(config.providers.embedding);
+  const provider = config.memoryRetrievalMode === 'hybrid' ? getEmbeddingProvider({ ...env }) : undefined;
   return {
     appId: PERSONAL_MEMORY_APP_ID,
     retrievalMode: config.memoryRetrievalMode,
-    embeddingModel: config.providers.embedding.model,
-    embeddingDimensions: EMBEDDING_DIMENSIONS,
+    embeddingModel,
+    embeddingDimensions: config.providers.embedding.dimensions,
+    isEmbeddingTargetCurrent: () => getEmbeddingNamespace(getProviderConfig(env).embedding) === embeddingModel,
     organizer: createProviderMemoryOrganizer(),
     organizerModel: getProviderConfig(env).chat.model,
     embed: config.memoryRetrievalMode === 'hybrid'
-      ? (request: Parameters<ReturnType<typeof getEmbeddingProvider>['embed']>[0]) => getEmbeddingProvider(env).embed(request)
+      ? (request: Parameters<ReturnType<typeof getEmbeddingProvider>['embed']>[0]) => provider!.embed(request)
       : undefined,
   };
 }

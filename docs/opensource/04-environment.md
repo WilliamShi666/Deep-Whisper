@@ -9,7 +9,7 @@
 ```sh
 pnpm install --frozen-lockfile
 pnpm run setup
-# 编辑 .env.local，填写自己的 DEEPSEEK_API_KEY
+# 编辑 .env.local，填写默认 DEEPSEEK_API_KEY 或下文的兼容服务配置
 pnpm run doctor
 pnpm dev
 ```
@@ -22,14 +22,14 @@ pnpm dev
 
 | 功能 | 收集项 | 获取方式 / 缺失时行为 |
 |---|---|---|
-| 基础聊天、捏人完善、图片审核、关键词记忆、站内来信 | `DEEPSEEK_API_KEY` | [DeepSeek个人API key](https://platform.deepseek.com/api_keys)；缺失doctor非零，聊天显示未配置，不伪造成功 |
+| 默认DeepSeek聊天、捏人完善、图片审核、关键词记忆、站内来信 | `DEEPSEEK_API_KEY` | [DeepSeek个人API key](https://platform.deepseek.com/api_keys)；缺失doctor非零，聊天显示未配置，不伪造成功 |
 | 照片 / Gemini语音 | `OPENROUTER_API_KEY` | [OpenRouter个人API key](https://openrouter.ai/settings/keys)；缺失不阻止文字聊天 |
 | 千问语音 / 混合向量检索 | `DASHSCOPE_API_KEY` | 按[千问AI平台获取API Key](https://platform.qianwenai.com/docs/api-reference/preparation/api-key)创建自己的通用按量key；须有TTS和embedding模型权限并配对正确endpoint |
 | SMTP可选转发 | `SMTP_HOST`、`SMTP_PORT`、`SMTP_USER`、`SMTP_PASSWORD`、`EMAIL_FROM` | 自己邮箱商提供的SMTP资料及应用专用密码；设置 `EMAIL_PROVIDER=smtp`、`LETTER_DELIVERY=both` |
 | Resend可选转发 | `RESEND_API_KEY`、`EMAIL_FROM` | 自己的Resend账户和验证发信域；设置 `EMAIL_PROVIDER=resend`、`LETTER_DELIVERY=both` |
 | 个人远程访问 | `OWNER_PASSWORD` | 自设不少于12字符的密码；设置password模式及自己的HTTPS origin |
 
-最小外部秘密只有DeepSeek key。三把AI key启用照片、千问语音和向量混合检索；自己承担所选供应商的用量费用，应用没有商品或会员状态。
+默认供应商路径的最小外部秘密只有DeepSeek key；兼容服务路径不要求它，详见下节。三把默认AI key启用照片、千问语音和向量混合检索；自己承担所选供应商的用量费用，应用没有商品或会员状态。
 
 收件地址保存在站内偏好设置，不放 `EMAIL_TO`。服务端只能给主人保存的固定地址转发，不接受任意To请求。本版不读取外部收件箱，也不把邮件内容作为AI指令入口。
 
@@ -42,7 +42,7 @@ pnpm dev
 | `APP_BASE_URL` | `http://127.0.0.1:<PORT>` | 纯http(s) origin，无路径/查询/凭据；local端口须匹配；远程须HTTPS |
 | `APP_DATA_DIR` | `./data` | 相对项目根目录或自选绝对持久目录；不可共享给第二实例 |
 | `APP_ACCESS_MODE` | `local` / `password` | local免账号只用于本机；password有cookie、限速、Host/Origin保护 |
-| `MEMORY_RETRIEVAL_MODE` | `auto` / `keyword` / `hybrid` | auto无向量key用keyword，有key用hybrid；显式hybrid缺key拒绝 |
+| `MEMORY_RETRIEVAL_MODE` | `auto` / `keyword` / `hybrid` | auto无完整向量配置用keyword，原生有key或兼容profile完整时用hybrid；显式hybrid缺配置拒绝 |
 | `EMAIL_PROVIDER` | `none` / `smtp` / `resend` | 不按“碰巧有key”自动发邮件 |
 | `LETTER_DELIVERY` | `in-app` / `both` / `email` | 默认站内；both/email仍保留持久站内副本 |
 | `OBJECT_STORAGE_PROVIDER` | `local` / `r2` | 默认私有本地媒体，在development/production均可用；不自动切R2 |
@@ -54,7 +54,7 @@ pnpm dev
 
 | 变量 | 默认 |
 |---|---|
-| `AI_CHAT_PROVIDER` / `AI_VISION_PROVIDER` | `deepseek` |
+| `AI_CHAT_PROVIDER` / `AI_VISION_PROVIDER` | 原生默认 `deepseek`；兼容chat未显式指定vision时vision继承兼容chat |
 | `AI_CHAT_MODEL` / `AI_VISION_MODEL` | 各自默认 `deepseek-flash`；聊天与上传审核独立 |
 | `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` |
 | `AI_IMAGE_PROVIDER` | `openrouter` |
@@ -65,7 +65,8 @@ pnpm dev
 | `DASHSCOPE_TTS_BASE_URL` | `https://maas.qianwenaiapi.com/api/v1` |
 | `DASHSCOPE_EMBEDDING_BASE_URL` | `https://maas.qianwenaiapi.com/compatible-mode/v1` |
 | `DASHSCOPE_AUDIO_HOST_SUFFIX` | `.aliyuncs.com`，临时音频下载的HTTPS主机白名单 |
-| `AI_EMBEDDING_PROVIDER` | `dashscope`，1024维，单批≤10 |
+| `AI_EMBEDDING_PROVIDER` | `dashscope`，默认1024维，单批≤10 |
+| `AI_EMBEDDING_MODEL` | `text-embedding-v4` |
 
 推荐profile两条端点对应同一千问AI平台key。阿里云百炼的账户/地区/key不自动等同，改用其他profile时须提供它对应的地址并验证权限。doctor能校验配置结构与模型ID格式，不证明云账户模型权限或费用。没有implicit MiniMax后备。两把语音key都有时Qwen失败才回退Gemini，按性别兼容音色，回退会换声；只有Qwen时无未配置后备请求。
 
@@ -73,11 +74,54 @@ pnpm dev
 
 `AI_CHAT_MODEL`、`AI_VISION_MODEL`、`AI_IMAGE_MODEL`、`AI_TTS_MODEL`、`AI_EMBEDDING_MODEL` 都是可选的模型ID，不是密钥。Embedding模型默认 `text-embedding-v4`。只更改对应变量并重启，不改变provider、key和endpoint；新增云端模型权限可能需要供应商账户设置。模型ID来自自己的供应商目录，非空、无空白且不超过200字符。格式通过不代表模型可用。
 
-聊天模型要兼容Chat Completions流式、JSON、thinking设置；图片聊天还需要多模态能力。`AI_VISION_MODEL`独立控制上传安全审核，默认不随聊天模型变化。图像模型须兼容OpenRouter `/images`、参考图与PNG/JPEG/WebP输出；两个内置模型保留GPT的quality或Gemini的resolution，其他ID不发送这两个特有参数，采用上游默认画质。TTS模型必须兼容当前语音provider的请求、音色与音频格式；不能将实时/WebSocket/自定义音色模型ID直接当作现有HTTP合成模型使用。`AI_TTS_MODEL`只作用于主链路，Qwen的Gemini回退仍用默认模型。原语音缓存不会自动重生成，新消息使用新模型。
+原生DeepSeek聊天模型要兼容Chat Completions流式、JSON、thinking设置；图片聊天还需要多模态能力。`AI_VISION_MODEL`独立控制上传安全审核，默认不随聊天模型变化。图像模型须兼容OpenRouter `/images`、参考图与PNG/JPEG/WebP输出；两个内置模型保留GPT的quality或Gemini的resolution，其他ID不发送这两个特有参数，采用上游默认画质。TTS模型必须兼容当前语音provider的请求、音色与音频格式；不能将实时/WebSocket/自定义音色模型ID直接当作现有HTTP合成模型使用。`AI_TTS_MODEL`只作用于主链路，Qwen的Gemini回退仍用默认模型。原语音缓存不会自动重生成，新消息使用新模型。
 
-Embedding须接受 `/embeddings`、`dimensions=1024`、`encoding_format=float`。chat与worker使用同一个配置模型命名空间，召回只比较同模型/维度/正文版本向量。切换后后台有界补建已有记忆的新向量，旧facts/FTS不删除；关键词召回继续，补建产生API用量。新模型不可用时可恢复原ID或用keyword模式，不需要删除data或重置库。
+Embedding须接受 `/embeddings`、浮点输出；默认传 `dimensions=1024` 与 `encoding_format=float`，可配置实际维度及是否发送dimensions参数。chat与worker使用同一个配置命名空间，召回只比较同协议/地址/模型/维度/正文版本向量。切换后后台有界补建已有记忆的新向量，旧facts/FTS不删除；关键词召回继续，补建产生API用量。新模型不可用时可恢复原ID或用keyword模式，不需要删除data或重置库。
 
 英文快速上手见 [README.en.md](../../README.en.md)，中文步骤见 [README.md](../../README.md)。
+
+## 自定义 API 根地址与 OpenAI 兼容协议
+
+四类能力各自可以选择原生协议或 `openai-compatible`。协议由provider明确选择，不依据URL或模型名猜测。兼容服务不要求DeepSeek/OpenRouter/千问账户；每项独立配置，服务无认证时key可为空，云服务有认证则必须填写自己的key。
+
+| 能力 | provider合法值 | 独立配置 |
+|---|---|---|
+| Chat | `deepseek` / `openai-compatible` | `AI_CHAT_BASE_URL`、`AI_CHAT_API_KEY`、`AI_CHAT_MODEL` |
+| Vision safety | `deepseek` / `openai-compatible` | `AI_VISION_BASE_URL`、`AI_VISION_API_KEY`、`AI_VISION_MODEL` |
+| Image | `openrouter` / `openai-compatible` | `AI_IMAGE_BASE_URL`、`AI_IMAGE_API_KEY`、`AI_IMAGE_MODEL` |
+| TTS | `qwen-audio` / `openrouter-gemini` / `openai-compatible` | `AI_TTS_BASE_URL`、`AI_TTS_API_KEY`、`AI_TTS_MODEL` |
+| Embedding | `dashscope` / `openai-compatible` | `AI_EMBEDDING_BASE_URL`、`AI_EMBEDDING_API_KEY`、`AI_EMBEDDING_MODEL` |
+
+启用兼容模式时，必须填写该项 `AI_*_PROVIDER=openai-compatible`、根地址和模型；key可选仅表示支持无认证服务，不代表云服务不需要key。API根地址包括服务前缀，例如 `https://service.example/v1`；程序追加 `/chat/completions`、`/images/edits`、`/images/generations`、`/audio/speech` 或 `/embeddings`，不要填写这些完整请求路径。支持HTTP/HTTPS，规范化末尾斜杠；拒绝查询、片段和URL里的用户名/密码。远程服务请使用HTTPS。
+
+默认原生profile保持原端点。每项新的 `AI_*_BASE_URL` / `AI_*_API_KEY` 优先于该原生profile的供应商旧变量，未填写则回落旧变量及原默认值。兼容profile不会回落到供应商旧密钥。`AI_TTS_API_KEY` 单独出现而没有显式provider时，默认选千问；因此配置其他语音服务必须明确填写provider。千问失败时的Gemini后备仍使用自身OpenRouter连接，不随独立生图地址变化。
+
+兼容chat且 `AI_VISION_PROVIDER` 省略或为 `openai-compatible` 时，视觉审核继承chat的地址、模型和key，支持用 `AI_VISION_*` 局部覆盖。更换视觉地址时不继承chat key，避免将凭据发送给另一个服务；认证服务应填写自己的 `AI_VISION_API_KEY`。若chat并非兼容profile，选择 `AI_VISION_PROVIDER=openai-compatible` 则需填写自己的地址与模型。原生DeepSeek视觉默认仍独立于chat模型。
+
+### 最小兼容配置
+
+以下示例需替换模型，且要求本机已有相应服务监听该地址：
+
+```dotenv
+AI_CHAT_PROVIDER=openai-compatible
+AI_CHAT_BASE_URL=http://127.0.0.1:1234/v1
+AI_CHAT_MODEL=your-chat-model
+# 无认证本地服务可留空，有认证服务必须填写自己的key
+AI_CHAT_API_KEY=
+MEMORY_RETRIEVAL_MODE=keyword
+```
+
+这条启动路径不需要 `DEEPSEEK_API_KEY`。模型必须支持流式Chat Completions、结构化JSON，以供对话、人格完善、记忆整理和来信使用；兼容适配器不发送DeepSeek的thinking专有字段。文字聊天可用不证明视觉审核可用，上传需要多模态模型及明确结构化安全判定。
+
+完整四类兼容配置示例见中英文README。各功能可以混用原生和兼容profile；未配置生图、语音或Embedding不影响文字聊天。
+
+### 媒体与向量接口边界
+
+- 生图：有参考图走multipart `/images/edits`，没有参考图走 `/images/generations`；必须同步返回Base64 PNG/JPEG/WebP。自拍保留活动角色的参考图，不自动改成无参考图生成。不支持异步任务及仅返回URL的响应。
+- TTS：`/audio/speech` 返回MP3/WAV字节。`AI_TTS_VOICE_FEMALE=alloy`、`AI_TTS_VOICE_MALE=onyx` 是兼容模式默认值，请改成服务支持的音色ID；按伴侣性别映射。界面使用兼容模式说明，不能把25个公开音色代号误认为该服务的25个音色。兼容TTS没有自动供应商后备。
+- Embedding：`/embeddings` 返回浮点向量。`AI_EMBEDDING_DIMENSIONS` 默认1024，合法范围1–65536整数；`AI_EMBEDDING_SEND_DIMENSIONS` 只能为true/false，默认true。不支持dimensions参数的固定维度接口设为false，但返回向量仍必须等于配置维度。
+
+修改provider/API根地址/模型/维度后重启app与worker。索引标识包含协议、规范化地址、模型和维度，查询与worker使用同一标识；不同服务的同名模型也不会混用向量。变化后后台有界重建，保留记忆facts与FTS，补建产生API用量；旧配置任务结果被fencing拒绝。仅轮换key不重建。保留旧默认profile的现有向量，不增加数据库schema迁移。语音缓存不自动失效，新合成才使用新设置。
 
 ## 站内信与可选邮箱转发
 

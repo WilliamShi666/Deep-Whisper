@@ -101,11 +101,31 @@ function embeddingTarget(payload: string) {
 function selectedEmbeddingTarget(options: SqliteMemoryOptions) {
   return { embeddingModel: options.embeddingModel ?? 'text-embedding-v4', embeddingDimensions: options.embeddingDimensions ?? 1024 };
 }
+function assertEmbeddingTarget(db: Database.Database, job: ClaimedMemoryJob, options: SqliteMemoryOptions): void {
+  if (options.isEmbeddingTargetCurrent && !options.isEmbeddingTargetCurrent()) throw new JobStateChanged('Embedding configuration changed');
+  const row = db.prepare('SELECT payload FROM memory_jobs WHERE id=? AND lease_token=?').get(job.id, job.lease_token) as { payload: string } | undefined;
+  const desired = row ? (JSON.parse(row.payload) as { desiredEmbeddingModel?: string; desiredEmbeddingDimensions?: number }) : undefined;
+  const selected = selectedEmbeddingTarget(options);
+  if (desired?.desiredEmbeddingModel !== undefined && (desired.desiredEmbeddingModel !== selected.embeddingModel
+    || desired.desiredEmbeddingDimensions !== selected.embeddingDimensions)) throw new JobStateChanged('Embedding target superseded');
+}
 /** Bounded catch-up when a formerly keyword-only personal instance enables hybrid. */
 export function enqueueMissingEmbeddingJobs(db: Database.Database, at: Date, options: SqliteMemoryOptions): number {
   const { embeddingModel: model, embeddingDimensions: dimensions } = selectedEmbeddingTarget(options);
   const payload = JSON.stringify({ embeddingModel: model, embeddingDimensions: dimensions });
   return db.transaction(() => {
+    // An in-flight request retains its lease, but another worker selecting a new
+    // space records the desired target in durable JSON. Its old bytes may finish;
+    // finalization must check this marker before writing them to the memory row.
+    const live = db.prepare(`SELECT id FROM memory_jobs WHERE kind='embedding' AND state='running' AND lease_expires_at>?
+      AND (COALESCE(json_extract(payload,'$.embeddingModel'),'text-embedding-v4')<>?
+        OR COALESCE(json_extract(payload,'$.embeddingDimensions'),1024)<>?
+        OR (json_extract(payload,'$.desiredEmbeddingModel') IS NOT NULL
+          AND (json_extract(payload,'$.desiredEmbeddingModel')<>?
+            OR COALESCE(json_extract(payload,'$.desiredEmbeddingDimensions'),1024)<>?))) ORDER BY created_at,id LIMIT 50`)
+      .all(at.getTime(), model, dimensions, model, dimensions) as Array<{ id: string }>;
+    for (const job of live) db.prepare(`UPDATE memory_jobs SET payload=json_set(payload,'$.desiredEmbeddingModel',?,'$.desiredEmbeddingDimensions',?) WHERE id=?`)
+      .run(model, dimensions, job.id);
     const rows = db.prepare(`SELECT m.id,m.visitor_id,m.companion_id,m.content_version FROM memories m
       LEFT JOIN memory_jobs j ON j.kind='embedding' AND j.memory_id=m.id AND j.content_version=m.content_version
       WHERE m.status='active' AND (m.valid_until IS NULL OR m.valid_until>?)
@@ -140,6 +160,7 @@ export async function processMemoryJobs(db: Database.Database, options: Omit<Sql
   const appId = options.appId ?? PERSONAL_MEMORY_APP_ID;
   const needsEmbedding = options.retrievalMode === 'hybrid' && !!options.embed;
   assertInstanceOwnership(dirname(db.name));
+  if (needsEmbedding && options.isEmbeddingTargetCurrent && !options.isEmbeddingTargetCurrent()) return outcome;
   if (needsEmbedding && !maintenanceActive(dirname(db.name))) enqueueMissingEmbeddingJobs(db, now(), options);
   for (let index = 0; index < (options.limit ?? 4); index++) {
     assertInstanceOwnership(dirname(db.name));
@@ -162,6 +183,7 @@ export async function processMemoryJobs(db: Database.Database, options: Omit<Sql
         const target = selectedEmbeddingTarget(options);
         db.transaction(() => {
           assertClaim(db, job, now().getTime());
+          assertEmbeddingTarget(db, job, options);
           const previous = embeddingTarget(job.payload);
           if (previous.embeddingModel !== target.embeddingModel || previous.embeddingDimensions !== target.embeddingDimensions) job.attempt_count = 1;
           job.payload = JSON.stringify(target);
@@ -172,6 +194,7 @@ export async function processMemoryJobs(db: Database.Database, options: Omit<Sql
         if (!vector) throw new Error('Embedding returned no vector');
         db.transaction(() => {
           assertClaim(db, job, now().getTime());
+          assertEmbeddingTarget(db, job, options);
           if (!setSqliteMemoryEmbedding(db, { id: job.memory_id!, contentVersion: job.content_version!, vector,
             model: target.embeddingModel, dimensions: target.embeddingDimensions })) throw new JobStateChanged('Memory content changed');
           complete(db, job, now().getTime());

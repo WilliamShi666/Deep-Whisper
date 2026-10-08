@@ -10,7 +10,7 @@ export function inspectPersonalEnvironment(env:RuntimeEnvironment=process.env):{
  try{
   if(Number(process.versions.node.split('.')[0])!==24)errors.push('Node 24 LTS is required');
   const config=getPersonalConfig(env,{strict:false});errors.push(...config.configurationErrors);
-  if(!config.capabilities.chat.enabled)errors.push('DEEPSEEK_API_KEY is required for chat: https://platform.deepseek.com/api_keys');
+  if(!config.capabilities.chat.enabled)errors.push(`${config.capabilities.chat.reason}; default DeepSeek keys: https://platform.deepseek.com/api_keys`);
   mkdirSync(config.dataDir,{recursive:true,mode:0o700});accessSync(config.dataDir,constants.W_OK|constants.R_OK);
   temporary=mkdtempSync(path.join(os.tmpdir(),'dw-doctor-'));const db=new Database(path.join(temporary,'probe.sqlite'));
   try{db.exec('CREATE VIRTUAL TABLE probe USING fts5(content)');checks.push(`SQLite ${db.prepare('SELECT sqlite_version() version').get() ? 'FTS5 available' : ''}`);}finally{db.close();}
