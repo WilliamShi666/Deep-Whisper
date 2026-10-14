@@ -1,0 +1,116 @@
+# Personal edition acceptance ledger
+
+2026-10-07. Plan approved; implementation uses an isolated managed worktree, synthetic SQLite databases and private media. MIT code license approved. Original production project and remote databases were not changed. Owner approved personal self-hosting distribution on 2026-10-07. On 2026-10-08 the owner clarified that character artwork and wallpaper derivatives use CC BY-NC-SA 4.0; independent heart-holding blue-whale branding retains separate terms. See ASSETS.md for scope, attribution and source-verification boundaries. Historical implementation reports below predate publication; current follow-up evidence is recorded at the end.
+
+This ledger separates implementation evidence from final acceptance. Independent code/spec reviews preceded the fresh dedicated E2E run; review findings were repaired and independently rechecked. Offline tests do not establish real provider output, voice quality or mailbox delivery. macOS host checks do not establish native Windows/Linux installation.
+
+| Spec | Concrete implementation / tests | Evidence and remaining boundary |
+|---|---|---|
+| 001 | setup/config + real SQLite core/chat/memory/letter tests | `personal-foundation`, `personal-core-api`, `sqlite-memory`, `personal-letters`; clean exported production lifecycle passed; see `e2e-report.md` and `clean-candidate-checks.md` |
+| 002 | SQLite/local storage default; removed Supabase/PG/Mem0/billing deps | production build + actual web/worker start with no real provider keys; no-key disabled capabilities and keyword/hybrid/Gemini/password browser profiles passed |
+| 003 | runtime auto/keyword/hybrid; scoped SQLite gateway fallback | foundation configuration matrix + `sqlite-memory`; genuine embedding requests not run |
+| 004 | capabilities safe DTO; owner client + localized capability UI | core boundaries/i18n tests; dedicated browser payload/DOM checks passed in both desktop and mobile emulation |
+| 005 | runtime Host/port/data origin validation, password public URL independent | foundation/owner matrix; macOS path tests, cross-OS execution pending |
+| 006 | offline doctor + explicit named bounded canary dispatch | personal-tools + personal-live-doctor; no live probe executed |
+| 007 | shared loadScriptEnv; shell wins; test excludes .env.local | foundation/script-env-precedence; live scripts now use same loader |
+| 008 | owner_slot unique/check + persisted UUID, server ignores visitor header | foundation/repository/API tests; second-browser owner identity and actual production restart persistence passed |
+| 009 | proxy/requireOwner Host/Origin/fetch-metadata guards | owner/core API tests, provider call count zero for rejected access |
+| 010 | password HMAC session + httpOnly/SameSite, rate limit, rotation | personal-owner and owner-client; actual desktop/mobile password, private-media access and logout checks passed |
+| 011 | eight identities/two appearances, scoped repository + UI | core API 16 combinations; appearance/voice/theme domain regressions; two companion browser flow and preserved old conversation passed |
+| 012 | profiles, relationships, manual prefs, feedback, palettes, bilingual UI | repository/API/locale/UI tests; desktop/mobile browser checks passed, including rose/blue palette persistence |
+| 013 | removed paid pages/routes/SDK/entitlement tables and prebuild guards | core boundaries + active source scan; no fabricated entitlements |
+| 014 | duplicate opening + same-conversation reservation + bounded failure release | `lease-runtime-green.log`: simultaneous second request409/provider called once, disconnect persists reply/job and releases, provider rejection permits retry, expired-token release preserves replacement; API changes separately frozen in `api-contracts.md` |
+| 015 | SSE event holdback, detached bounded stream finalization | personal-chat-stream including stalled-provider deadline + real route test; text exchanges enqueue jobs; opening/image-only save replies without organizer text jobs as original behavior |
+| 016 | configured image generation + immutable appearance validation | core media route tests + image provider/policy fixtures; synthetic browser generation, immutable reference, stale409 and fallback recovery passed; real provider image output not run |
+| 017 | approved upload receipt, strict safety, real private storage | core media route tests + VisionSafety provider contracts; rejects unknown verdict before write; actual synthetic upload/private-image browser flow passed |
+| 018 | click-only TTS, capability selection, cache/regenerate/voice validation; safe compatibility DTO and bilingual explanation | core media routes + speech/fallback/voice/SSR tests; click-only playback/cache/new-voice regeneration and Gemini compatibility passed with synthetic WAV; real voice quality and cross-OS listening pending |
+| 019 | internal AI contracts, bounded responses, cancellation/SSRF/download | provider tests + retained review-release-guards; merchant PromptScan retired |
+| 020 | matched Qianwen endpoints, v4/1024, batches of at most ten | embedding + personal-embedding-batches + Qwen transport tests; no paid cloud canary |
+| 021 | complete Drizzle schema, versioned migrations 1–3, WAL/FK/CHECK/JSON | foundation/core repository/real memory + letter schema tests; migration refuses implicit upgrade; v2 instance lock reclaims only after parent and all registered children are offline, blocks live/malformed/incomplete holders, fences ownership tokens and permits explicit backed-up upgrade; legacy dead parent-only locks require manual offline confirmation |
+| 022 | shared tokenization + parameterized FTS5/BM25 ascending | sqlite-memory lexical/bigram/single Han/escaped query fixtures |
+| 023 | transactional facts/FTS/source persistence and scope/status/expiry before limit | sqlite-memory consistency, expiry interference and rebuild tests |
+| 024 | all eligible scope vectors, model/dim/version validation, cosine + RRF | no-overlap semantic fixtures, invalid vectors, two branch results; no candidate truncation |
+| 025 | durable bounded embedding jobs, stale-version fences, lazy backfill | no-key add/update, delayed result/corrected text, keyword→hybrid backfill; failures leave facts valid |
+| 026 | original domain layers + companion feedback provenance + avoid topics | communication/memory pure domain tests and source guard counterexamples |
+| 027 | trusted empty vs failed recall, strict snapshot JSON, observedAt/resolved semantics | memory regression + SQLite snapshot/ordering tests; original domain inference semantics explicitly submitted for review |
+| 028 | exhaustive direct-source and same-scope explicit evidence dependency closure, unknown provenance reports partial | >48/expired/retired/multi-source, cycles/transitive dependencies and running writer/deletion races; shared gateway/organizer DELETE entry points independently rechecked and closed in code/spec reports |
+| 029 | source assistant unique job, fenced atomic effects + done, leases/heartbeat | two SQLite connection claims, crash rollback, restart/epoch/source cancellation and valid retry; eligible text exchanges as noted under 015 |
+| 030 | opt-in station letters, IANA local day, first-onboarding timezone confirmation/CAS/repick preservation, unique event and owner daily cap | personal-letters fake clock/current date/reopen/no duplicate + onboarding timezone tests; actual worker important-date generation, inbox expand/read and email-disabled UI passed |
+| 031 | dev/start supervisor + supervised worker/instance token, no historical mass catchup | actual production start, synthetic worker termination stops web and removes instance lock; actual SIGSTOP/SIGKILL parent/worker/Next orphan fixtures verify no late result or new-owner job consumption; letter sleep tests; dedicated exported production restart, persistence, restore and worker-termination checks passed |
+| 032 | saved owner recipient, independent station/email preferences, durable inbox | personal-letters + route tests; none/both conflict preserves station; no arbitrary To API |
+| 033 | Nodemailer TLS 465/STARTTLS587, bounded timeouts, accepted/unknown distinctions | fake transport tests + durable expired-send quarantine; real SMTP delivery not run |
+| 034 | HMAC signed email-only POST unsubscribe, inert GET, optional verified Resend receipt | scanner/expiry/signature/replay/early-event/recipient-change/reconsent tests; native desktop/mobile signed POST passed; inert GET, invalid token and hostile/null origins rejected; no production webhook configured |
+| 035 | private local store in production, owner media route, MIME/Range/symlink guards | personal-media + upload/photo/TTS route tests, maintenance race; optional explicit R2 follows user's cloud policy |
+| 036 | maintenance drain + writer/media lock + SQLite backup API, hashes/validated restore | tools/WAL/media/secret/tamper tests, old-version migration backup, process locks excluded; in-flight production backup drain, maintenance503, persisted assistant and validated restore passed; disk-full OS injection not yet run |
+| 037 | MIT + separate asset statement, allowlist export without .git/env/data, license inventory | personal-export + dependency inventory/audit; manual publication checklist and asset rights still required; no public push |
+| 038 | this numbered ledger; fresh independent reviews followed by separate E2E agent | independent code/spec reports and 24 distinct dedicated E2E cases recorded, no author self-review counted; final test teardown repair separately rechecked |
+| 039 | optional five model IDs resolved by shared runtime; independent upload moderation default | personal-model-selection config/default/invalid-ID tests |
+| 040 | selected models reach unchanged provider HTTP contracts and media validation | personal-model-selection Chat/SSE/reference image/Qwen/Gemini transport tests; existing provider regressions |
+| 041 | selected embedding namespace in query and worker; bounded async rebuild retains facts/FTS | personal-embedding-model real SQLite tests: A→B→A, same-dimension isolation, completed jobs, retry budget, leases, batch bound |
+| 042 | bilingual novice README, optional model templates, public English guide export | independent spec/doc review; personal-export real temporary-file English guide case |
+
+## TDD evidence
+
+Core author evidence: `core-ledger.md`, actual repository/API/stream/media Red/Green logs and frozen `api-contracts.md`. P4 evidence: `../evidence/p4/README.md`, 22 new SQLite behavior tests and 219 domain/provider regressions. P5 evidence: `p5-letters-ledger.md` and `tdd/p5-*`.
+
+Root evidence: `foundation-red/green`, `owner-red/green`, `media-red/green`, `maintenance-red/green`, `tools-red/green`, `migration-red/green`, `tdd/backup-process-locks-red/green`, `tdd/mock-letter-red/green`. Missing-module scaffolding failures are identified separately from behavioral Reds. The low-impact export allowlist and live-dispatch guard were checked after their first implementation; they are not presented as captured pre-implementation behavioral Reds.
+
+Initial author personal subset: 80/80 before independent reviews. Final full unit suite: **1046/1046**, zero failures/skips, including four actual-process cleanup regressions; final production build and TypeScript passed. Full lint: 0 errors, 25 warnings. Dedicated E2E: 24 distinct scenario/device/profile cases passed across the baseline and focused retests (not one single full-suite run); external services were synthetic. See `code-review.md`, `spec-review.md` and `e2e-report.md` for the gate order, historical failures and recovery evidence. The official npm registry production audit after dependency repairs reported 0 known vulnerabilities (480 production dependencies); it is a point-in-time report. Review-fix TDD logs remain under `tdd/`.
+
+## Release and external acceptance
+
+The public export is a local candidate only, without inherited history. Do not publish until original artwork/wallpaper/voice samples/brand permissions are settled. Dependency inventory was generated on macOS; optional native dependency variants and their notices must be retained on distributed targets. Docker daemon was unavailable during author checks; a Dockerfile existing is not a Linux execution result. CI matrix is configured but has not run remotely. No real AI request or external email was made.
+
+Final test-facility repair: the independent controlled subprocess probe captured a real timeout cleanup failure (launcher exited while a registered writer stayed alive). The runner and lifecycle now require confirmed offline supervisor/child inventories before deleting their own synthetic data; failure retains it and returns nonzero. `tdd/e2e-cleanup-red.log` is a missing-module scaffolding Red, not behavioral evidence; the independent reproduction is documented in `code-review.md`. The new cleanup regression tests use real controlled child processes.
+
+Final author check logs: `final-unit-green.log`, `final-build-green.log`, `final-lint-green.log`, `final-types-green.log` and `final-test-facility-lint-green.log`. Production business source passed the build before the final test-only teardown helper; that subsequent helper and callers passed TypeScript/ESLint and the full unit suite. The final freshly exported 696-file package completed its own frozen offline install and full production build; see `clean-candidate-checks.md`.
+
+Delivery consolidation: source files were scoped-synchronized into the user checkout, with original environment files and three unrelated dirty documents preserved. Original old Next.js cache was reversibly archived under ignored `.local/legacy-next-before-personal-20261007`; original source files were backed up under `.local/personal-sync-backup-20261007`. Actual source hashes matched the copied files and the user checkout TypeScript check passed after its own locked dependency installation. GitNexus was refreshed under `DeepWhisperOpenSource`. No commit, push, remote database operation or publication occurred.
+
+## Model configuration follow-up (2026-10-07)
+
+Initial public release: d241756 in WilliamShi666/Deep-Whisper, with a clean root Git history and owner-approved static assets; real credentials, runtime media and user data were excluded. This follow-up adds compatible model ID overrides for chat, upload moderation, images, speech and embeddings, plus README.en.md. The provider services and successful frontend API/SSE shapes remain unchanged.
+
+TDD: personal-model-selection captured six behavioral failures before the runtime/adapter changes, then six passes. personal-embedding-model captured six failures before implementing configured embedding transport, matching query/worker namespaces and model-switch job rebuilding, then six passes. Real SQLite fixtures cover A→B→A, retained facts/FTS, old-space exclusion, bounded catch-up, preserved retry budgets and stale lease fencing. Existing fixed-model rejection tests were updated to the new configurable model contract; malformed IDs, provider enums, response drift and media boundary tests remain.
+
+Final full unit suite: **1060/1060**, zero failures/skips. TypeScript passed; lint has zero errors and 25 existing warnings. Independent code and spec/documentation reviews passed. This follow-up does not add browser E2E, paid model requests or real email delivery checks; it tests provider request/response contracts with network fakes and memory behavior with real temporary SQLite. Cloud model availability and permissions remain the user's provider-account configuration.
+
+
+## Custom API connections and asset-license correction (2026-10-08)
+
+The accepted extension adds independent API roots, keys and models for chat, images,
+speech and embeddings, retaining native provider profiles and successful API/SSE
+contracts. Compatible vision inherits the compatible chat connection unless
+independently overridden; a changed endpoint cannot inherit the chat key. The
+character/wallpaper assets use CC BY-NC-SA 4.0 with original and project attribution;
+MIT remains the code/documentation license and independent brand artwork retains
+separate terms. See ASSETS.md for the owner-confirmed scope and source-check boundary.
+
+| Spec | Implementation and verification |
+|---|---|
+| OSS-043 | Shared runtime connection parser, URL validation, legacy precedence, unauthenticated compatible capabilities, doctor and credential-free mocks. `personal-endpoint-config` five behavioral cases; public speech DTO regression excludes key/model/voice/endpoint data. |
+| OSS-044 | Chat Completions/SSE/structured JSON and independent vision registry; compatible transport tests verify no vendor thinking fields, inherited/overridden vision connection, explicit native missing-key refusal and bounded cancellation. Existing frozen route/SSE regression tests pass. |
+| OSS-045 | Reference-preserving multipart edits, synchronous validated Base64 images and binary MP3/WAV speech; gender voice mapping, safe errors and independent native Gemini fallback. `openai-compatible-provider` 18 network-boundary tests plus native provider regressions. |
+| OSS-046 | Shared protocol/endpoint/model/dimension namespace; optional dimensions, ordered batching, preserved legacy default namespace, key-rotation stability. `personal-embedding-endpoints` eight cases use fake network and real temporary SQLite for switching, FTS, stale output and running A→B→A; existing model/retry/lease/batch-bound tests retained. No schema migration. |
+| OSS-047 | Bilingual ASSETS/README and THIRD_PARTY_NOTICES clarify 16 character images and 40 wallpaper sets including 120 wallpaper variants, attribution, changes, noncommercial/share-alike terms and separate brand rights. Publication manifest records the corrected terms and refreshed file hashes. |
+| OSS-048 | Both README guides and env templates explain default and compatible setup, required/optional configuration, root paths, protocol/voice/dimension compatibility, restart, cache and rebuild usage. Independent spec reviewer checked documentation against runtime; local Markdown links were checked. |
+
+TDD evidence: five new configuration cases first failed on the old runtime, then
+passed. New adapter/embedding test imports initially failed before their new modules
+existed (scaffolding RED, not evidence of a behavioral failure). Independent code
+review then identified a live A→B→A desired-target marker defect; a real temporary
+SQLite test reproduced it before the fix, and the corrected query now passes without
+spending extra retries. The independent reviewer rechecked the fix.
+
+Final validation: **1091/1091 unit tests**, zero failures/cancellations/skips;
+TypeScript and production build passed. ESLint reports zero errors and 25 pre-existing
+warnings. Independent code review passed after the above fix, with 70 targeted checks;
+independent spec review passed with 31 targeted checks. No remaining review findings.
+
+Per the user's instruction this increment does not add browser E2E, paid provider
+calls or real email delivery tests. Passing fake-network contracts does not prove
+any particular third-party account/model supports these interfaces. No remote
+DB commands or changes to local credentials, user data or the running instance were
+made. The original creators' permission pages were not independently retrieved;
+the asset notice records the user's license confirmation and community attribution
+reference without presenting it as a per-file original authorization document.

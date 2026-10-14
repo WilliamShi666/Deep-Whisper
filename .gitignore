@@ -1,0 +1,218 @@
+node_modules
+dist
+.DS_Store
+*.swp
+.git/*
+__pycache__/
+*.pyc
+.venv/*
+*.o
+*.a
+/vendor
+*.egg-info/
+/.env
+.env
+
+# JS/TS bundlers & build outputs
+.next
+.nuxt
+.turbo
+.vercel
+.parcel-cache
+.cache
+coverage
+storybook-static
+
+# Package manager artifacts
+.pnp*
+.npm
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# Go tooling
+bin/
+*.test
+
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+
+# OS / misc
+Thumbs.db
+ehthumbs.db
+
+# Logs
+output.log
+*.log
+*.log.*
+logs/
+
+# 视频文件
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.mkv
+*.webm
+*.m4v
+*.mpeg
+*.mpg
+*.3gp
+*.f4v
+*.rmvb
+*.vob
+
+# 归档文件
+*.iso
+*.dmg
+*.rar
+*.zip
+*.gz
+
+# 文档类也默认加入
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.ppt
+*.pptx
+*.xlsx
+*.csv
+
+# Preview files
+.preview
+
+# CodeGraph index
+.codegraph
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+# Production build
+dist/
+build/
+out/
+.next/
+.rsbuild/
+# Testing
+coverage/
+*.lcov
+.nyc_output
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+node-compile-cache/
+# Editor directories and files
+.claude/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swo
+*~
+# OS files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Desktop.ini
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+# Optional files
+*.tgz
+*.tar
+# TypeScript
+*.tsbuildinfo
+# Misc
+.codegraph/
+
+# Local configuration and credentials. Commit only the safe template.
+.env
+.env.*
+!.env.example
+.mem0-integration/
+/.local/
+
+# Demo runtime outputs: user-uploaded media and generated audio should stay local.
+public/uploads/
+/public/tts/
+/public/tts-preview/
+
+# 动手改本地库前的 pg_dump 备份（含真实数据，绝不能进仓库）。
+/.backup/
+
+.vercel
+.env*
+# Supabase CLI 的本地凭据文件（supabase/.env）必须留在仓库外，只提交这份模板。
+# 注意：`!.env.example` 必须排在 `.env*` 之后，否则会被后者覆盖（gitignore 是后匹配者胜）。
+!supabase/.env.example
+!.env.example
+
+# Browser test artifacts and local generated image objects.
+/test-results/
+/playwright-report/
+/public/images/
+
+# Local agent scratch and evidence artifacts referenced by docs/next-round-planning.
+/.codex-p3-stage/
+
+# GitNexus 索引产物（本地生成，体积大且与提交无关）与 AgentTeams 运行时状态
+/.gitnexus/
+/.agent-teams/
+
+# 本地临时文件与凭据备份：`.env*` 只拦得住点开头后紧跟 env 的名字，
+# 拦不住 `.tmp-env-local.bak` 这类前缀（曾因此差点把 service-role key 提交上去）。
+.tmp-*
+.tmp/
+*.bak
+/.codex-tmp/
+/optimizing_conversation_experiences.txt
+
+# Personal SQLite and private runtime files
+/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+/.next-personal*/
+!docs/opensource/implementation/**/*.log
+!docs/opensource/implementation/*.log
+
+!.env.advanced.example
+/.public-export/

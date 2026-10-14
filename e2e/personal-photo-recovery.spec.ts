@@ -1,0 +1,5 @@
+import {test,expect} from '@playwright/test';
+import {profile,resetFixture,customize,meet,send,json} from './helpers/personal';
+test('policy rejected photo retries once and browser explains fallback',async({page,request},info)=>{
+ test.skip(profile!=='keyword'||info.project.name!=='chromium','One synthetic photo fault recovery run');test.setTimeout(60_000);resetFixture();await customize(page,'en');await meet(page,'en');await json(request,'/api/e2e/trace','POST',{imageFailuresRemaining:1,imageFailureCode:'policy_rejected'});await send(page,'给我发一张照片','en');await expect.poll(async()=>(await json(request,'/api/e2e/trace')).imageCalls.length).toBe(2);await expect(page.getByTestId('photo-fallback-notice')).toBeVisible();const calls=(await json(request,'/api/e2e/trace')).imageCalls;expect(calls.map((c:{outcome:string})=>c.outcome)).toEqual(['policy_rejected','success']);expect(calls[0].referenceSha256).toEqual(calls[1].referenceSha256);expect((await json(request,'/api/e2e/trace')).speechCalls).toHaveLength(0);
+});

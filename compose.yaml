@@ -1,0 +1,17 @@
+services:
+  deep-whisper:
+    build: .
+    env_file: .env.local
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5000
+      APP_DATA_DIR: /data
+      APP_ACCESS_MODE: password
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - personal-data:/data
+    init: true
+    restart: unless-stopped
+volumes:
+  personal-data:
