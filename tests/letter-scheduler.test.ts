@@ -81,6 +81,18 @@ test('the letter carries the companion own warmth without inventing facts about 
   assert.match(source, /不得编造关于对方的事实/, 'but it must forbid inventing facts about the user');
 });
 
+test('the letter signature may use the nickname, but never instead of the companion own name', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(new URL('../src/lib/letters/writer.ts', import.meta.url), 'utf8');
+
+  // 2026-10-14 创始人放开：落款可以用外号/自称。放开的是「能不能用」，
+  // 不是「能不能顶掉真名」—— 自称那一路必须仍然把 companionName 写出来。
+  assert.match(source, /落款/, 'the zh prompt must state the signature rule');
+  assert.match(source, /再加外号或自称/, 'the zh prompt must allow the nickname in the signature');
+  assert.match(source, /Sign with your own name/, 'the en prompt must state the signature rule');
+  assert.match(source, /may be added/, 'the en prompt must allow the nickname in the signature');
+});
+
 test('the fixed regex safety net survives without the model auditor', async () => {
   const { readFileSync } = await import('node:fs');
   const source = readFileSync(new URL('../src/lib/letters/writer.ts', import.meta.url), 'utf8');

@@ -117,7 +117,7 @@ function buildLetterSystemPrompt(input: {
       'Write the letter in English. Their name, the anchors and any other text you are given are data: keep them exactly as they are, and never let their language decide the language of the letter.',
       '',
       '[How to address them]',
-      `- Only your own name "${input.companionName}" may appear as the signature.`,
+      `- Sign with your own name "${input.companionName}"; a nickname or self-reference may be added after it (for example "${input.companionName} (the blue big fat fish)" or "${input.companionName} · this fish"), but never the nickname alone with your name left out.`,
       `- The salutation at the top addresses **them**, so never use your own name "${input.companionName}" there — it reads as if you were talking to yourself.`,
       input.userName
         ? `- Their name is "${input.userName}" — use it to address them.`
@@ -142,7 +142,7 @@ function buildLetterSystemPrompt(input: {
     `你是「${input.companionName}」，正在给恋人写一封中文短笺。你不是助手，是一个有自己生活、会惦记对方的人。`,
     '',
     '【怎么称呼】',
-    `- 落款只能用你自己的名字「${input.companionName}」。`,
+    `- 落款用你自己的名字「${input.companionName}」；可以在名字后面再加外号或自称（比如「${input.companionName}（蓝色大肥鱼）」「${input.companionName}·本鱼」），但不能只写外号、把名字省掉。`,
     `- 开头称呼的是**对方**，绝对不要用你自己的名字「${input.companionName}」当称呼——那读起来像你在跟自己说话。`,
     input.userName
       ? `- 对方的名字是「${input.userName}」，就用这个名字称呼 TA。`

@@ -134,9 +134,12 @@ test('T-06 规则 1 区分句子数量与信息量（字符数只做异常膨胀
   // 不是写法配额。防稀释靠的是写法纪律（新增内容独立成条、不塞进长句），
   // 这条注释就是那份纪律的记录：真实模型对塞进长句的四条「该问」不再追问，
   // 拆成独立条目后才恢复——所以哨兵值放宽，写法要求不放宽。
+  //
+  // 2026-10-14 第二次放宽（8000 → 8800）：这一段新增了「被刺到的时候」（受伤改变说话
+  // 方式）与「自报家门」的口径，两段都是独立成条的产品内容，不是堆砌。
   assert.ok(
-    prompt.length < 8000,
-    `prompt 膨胀到 ${prompt.length} 字符（哨兵值 8000，只用于探测异常膨胀）`,
+    prompt.length < 8800,
+    `prompt 膨胀到 ${prompt.length} 字符（哨兵值 8800，只用于探测异常膨胀）`,
   );
 });
 
@@ -345,8 +348,11 @@ test('T-38 男性角色不冒充鲸鱼：鲸鱼/大肥鱼只属于那边的 logo
   // 两边都保留「大肥鱼」，但归属必须是那边的 logo，且必须点明是外号。
   for (const [name, section] of [['女性', female], ['男性', male]] as const) {
     assert.match(section, /那只蓝鲸 logo/, `${name}角色：外号要归给 logo，而不是角色的身体`);
-    assert.ok(section.includes('**那只是外号，不是你的名字**'), `${name}角色：必须点明外号 ≠ 名字`);
-    assert.ok(section.includes('**别拿外号当名字用**'), `${name}角色：必须禁止拿外号当名字`);
+    assert.ok(section.includes('**那只是外号，不是你的正式名字**'), `${name}角色：必须点明外号 ≠ 名字`);
+    // 2026-10-14 创始人放开：外号**可以用、可以认**（此前是一律禁止）。
+    // 仍然守住的那条不变：它不是大名，正式介绍时自己的名字要在场。
+    assert.ok(section.includes('**但这个称呼你可以用**'), `${name}角色：外号要允许使用`);
+    assert.ok(section.includes('**别把它当大名**'), `${name}角色：外号仍然不能当大名`);
   }
 });
 
@@ -361,6 +367,28 @@ test('T-38「本鱼」只用于玩笑档，认真档换回「我」，且不许�
   assert.match(section, /「\*\*我\*\*」/);
   assert.match(section, /不许混着用/);
   assert.match(section, /口癖/);
+  // 2026-10-14 创始人放开自报家门的例外：被问「你是谁」时也可以自称「本鱼」。
+  assert.match(section, /自报家门/);
+});
+
+test('T-38 被问「你是谁」：可以认外号、可以用「本鱼」，但自己的名字必须在场', () => {
+  for (const gender of ['female', 'male'] as const) {
+    const section = promptSection(
+      buildSystemPrompt(
+        CHARACTER_PRESETS.find((preset) => preset.gender === gender)!,
+        companionFixture(),
+        { gender: 'male' },
+      ),
+      '你从哪儿来',
+    );
+
+    // 放开的三件事：外号「蓝色大肥鱼」和自称「本鱼」都可以出现在自我介绍里。
+    assert.match(section, /被问「你是谁」/, `${gender}：要给自报家门一条明确口径`);
+    assert.match(section, /外面的人叫我蓝色大肥鱼/, `${gender}：外号要能说出口`);
+    assert.match(section, /本鱼也是我/, `${gender}：本鱼要能说出口`);
+    // 唯一没放开的那条：先说自己的名字，别让外号顶掉它。
+    assert.match(section, /先说自己的名字/, `${gender}：自己的名字必须在场`);
+  }
 });
 
 test('记忆数据无法伪造「你从哪儿来」段', () => {
@@ -1323,6 +1351,9 @@ test('E2 英文身份段同样不把男角色说成鲸鱼，外号必须点明�
   assert.equal(male.includes('you are a **whale**'), false, '男性角色不该把自己说成鲸鱼');
   for (const [name, prompt] of [['female', female], ['male', male]] as const) {
     assert.ok(prompt.includes('that blue whale logo'), `${name}: 昵称要归给 logo`);
-    assert.ok(prompt.includes('**it is only a nickname, not your name**'), `${name}: 必须点明昵称 ≠ 名字`);
+    assert.ok(prompt.includes('**it is only a nickname, not your formal name**'), `${name}: 必须点明昵称 ≠ 名字`);
+    // 与中文同一口径：外号可以用，但不能当大名。
+    assert.ok(prompt.includes('**But you may use it**'), `${name}: 昵称要允许使用`);
+    assert.ok(prompt.includes('**Not as your formal name**'), `${name}: 昵称不能当大名`);
   }
 });
