@@ -8,6 +8,8 @@ This is the **personal, self-hosted open source edition** of Deep Whisper. Run i
 
 Want to see the product first? Visit **[Deep Whisper online](https://www.deepwhisperai.com)**.
 
+A walkthrough of this open-source edition is published on [AI Engineering Store](https://aiengstore.com/projects/deep-whisper): the memory lifecycle and the letter pipeline, each claim pinned to a file and a line. The store front page is [aiengstore.com](https://aiengstore.com).
+
 This edition uses Next.js, React, TypeScript and SQLite. AI features use services you configure, including cloud APIs or local OpenAI-compatible services. Cloud chat and generation require internet access. Local use requires no project account, Supabase configuration or PostgreSQL installation, and has no project membership purchase flow.
 
 ## What you can do
