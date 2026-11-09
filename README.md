@@ -8,6 +8,8 @@ Deep Whisper 是一款 AI 伴侣聊天产品：选择喜欢的角色，定制名
 
 想先看看产品？访问 **[Deep Whisper 线上版本](https://www.deepwhisperai.com)**。
 
+本仓库的开源版本说明与技术拆解发布于 [AI Engineering Store](https://aiengstore.com/projects/deep-whisper)：记忆生命周期与来信链路两部分按源码位置逐条列出。店铺首页见 [aiengstore.com](https://aiengstore.com)。
+
 本版使用 Next.js、React、TypeScript 和 SQLite。AI 能力通过您配置的 API 服务调用，可使用云服务或本地 OpenAI 兼容服务；云端聊天和生成内容需要网络。本地使用无需注册项目账号、配置 Supabase 或安装 PostgreSQL，也没有项目会员购买流程。
 
 ## 能玩什么
